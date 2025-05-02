@@ -1,0 +1,53 @@
+BasedOnStyle: LLVM
+
+UseTab: Never
+
+IndentWidth: 4
+TabWidth: 4
+
+ColumnLimit: 0
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+BreakBeforeBraces: Custom
+AlignAfterOpenBracket: BlockIndent
+
+BracedInitializerIndentWidth: 4
+
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterObjCDeclaration: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  AfterControlStatement: Never
+
+InsertBraces: false
+BreakArrays: true
+
+IndentCaseBlocks: true
+IndentCaseLabels: true
+
+BinPackParameters: false
+
+Cpp11BracedListStyle: true
+
+IndentAccessModifiers: false
+
+NamespaceIndentation: All
+FixNamespaceComments: false
+
+AlignOperands: AlignAfterOperator
+
+BreakBeforeBinaryOperators: NonAssignment
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false

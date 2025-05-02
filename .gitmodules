@@ -1,0 +1,9 @@
+[submodule "cxxapi/shared/thirdparty/json"]
+	path = cxxapi/shared/thirdparty/json
+	url = https://github.com/nlohmann/json.git
+[submodule "cxxapi/shared/thirdparty/glaze"]
+	path = cxxapi/shared/thirdparty/glaze
+	url = https://github.com/stephenberry/glaze.git
+[submodule "cxxapi/shared/thirdparty/fmt"]
+	path = cxxapi/shared/thirdparty/fmt
+	url = https://github.com/fmtlib/fmt.git

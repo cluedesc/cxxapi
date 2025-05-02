@@ -1,0 +1,44 @@
+name: Deploy MkDocs to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - run: pip install mkdocs mkdocs-material
+
+      - run: cd docs && mkdocs build --config-file mkdocs.yml --site-dir site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site
+
+  deploy:
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/deploy-pages@v4

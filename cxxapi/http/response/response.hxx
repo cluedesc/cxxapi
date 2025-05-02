@@ -1,0 +1,433 @@
+/**
+ * @file response.hxx
+ * @brief HTTP response abstractions including plain text, etc.
+ */
+
+#ifndef CXXAPI_HTTP_RESPONSE_HXX
+#define CXXAPI_HTTP_RESPONSE_HXX
+
+namespace cxxapi::http {
+    /**
+     * @brief Represents a generic HTTP response, including status, headers, body, cookies, and optional streaming.
+     */
+    struct response_t {
+        /**
+         * @brief Type alias for a callback invoked to send a streaming response.
+         *
+         * The callback receives a connected TCP socket and should co_await
+         * asynchronous write operations on it.
+         */
+        using callback_t = std::function<boost::asio::awaitable<void>(boost::asio::ip::tcp::socket&)>;
+
+      public:
+        /**
+         * @brief Default-construct a new empty response.
+         */
+        CXXAPI_INLINE constexpr response_t() = default;
+
+        /**
+         * @brief Virtual destructor to allow polymorphic cleanup.
+         */
+        CXXAPI_INLINE virtual ~response_t() = default;
+
+        /**
+         * @brief Construct a plain-text response.
+         * @param body The response body as a string.
+         * @param status_code The HTTP status code to send (default is 200 OK).
+         * @param headers Additional headers to include.
+         */
+        CXXAPI_INLINE response_t(std::string&& body, e_status&& status_code = e_status::ok, headers_t&& headers = {}) {
+            m_body = std::move(body);
+
+            {
+                if (!headers.empty()) {
+                    for (auto& header : headers)
+                        m_headers[std::move(header.first)] = std::move(header.second);
+                }
+
+                m_headers.emplace("Content-Type", "text/plain");
+            }
+
+            m_status = std::move(status_code);
+        }
+
+      public:
+        /**
+         * @brief Add a Set-Cookie header for this response.
+         *
+         * Builds a cookie string including optional attributes.
+         *
+         * @param name The cookie name.
+         * @param value The cookie value.
+         * @param path The Path attribute (default "/").
+         * @param domain The Domain attribute (default none).
+         * @param secure If true, adds the Secure flag.
+         * @param http_only If true, adds the HttpOnly flag.
+         * @param max_age Max-Age attribute in seconds (0 means no Max-Age).
+         */
+        CXXAPI_INLINE void set_cookie(
+            const std::string_view& name,
+            const std::string_view& value,
+
+            const std::string_view& path = "/",
+            const std::string_view& domain = "",
+
+            bool secure = false,
+            bool http_only = false,
+
+            std::chrono::seconds max_age = std::chrono::seconds(0)
+        ) {
+            std::ostringstream oss{};
+
+            oss << name << "=" << value;
+
+            if (!path.empty())
+                oss << "; Path=" << path << "; ";
+
+            if (!domain.empty())
+                oss << "; Domain=" << domain << "; ";
+
+            if (secure)
+                oss << "; Secure; ";
+
+            if (http_only)
+                oss << "; HttpOnly; ";
+
+            auto age_count = max_age.count();
+
+            if (age_count > 0u)
+                oss << "; Max-Age=" << age_count << "; ";
+
+            m_cookies.emplace_back(std::move(oss.str()));
+        }
+
+      public:
+        /**
+         * @brief Access the body for reading.
+         * @return Reference to the body_t struct.
+         */
+        CXXAPI_INLINE auto& body() { return m_body; }
+
+        /**
+         * @brief Access the headers for reading.
+         * @return Reference to the headers_t struct.
+         */
+        CXXAPI_INLINE auto& headers() { return m_headers; }
+
+        /**
+         * @brief Access the cookies for reading.
+         * @return Reference to the cookies_t struct.
+         */
+        CXXAPI_INLINE auto& cookies() { return m_cookies; }
+
+        /**
+         * @brief Access the status for reading.
+         * @return Reference to the e_status enum.
+         */
+        CXXAPI_INLINE auto& status() { return m_status; }
+
+        /**
+         * @brief Access the cookies for reading.
+         * @return Reference to the callback_t struct.
+         */
+        CXXAPI_INLINE auto& callback() { return m_callback; }
+
+        /**
+         * @brief Access the streaming flag.
+         * @return Reference to the streaming flag.
+         */
+        CXXAPI_INLINE auto& stream() { return m_stream; }
+
+      public:
+        /** @brief Get the response body. */
+        body_t m_body{};
+
+        /** @brief Get the response headers. */
+        headers_t m_headers{};
+
+        /** @brief Get the response cookies. */
+        cookies_t m_cookies{};
+
+        /** @brief Get the response status code. */
+        e_status m_status{e_status::ok};
+
+        /** @brief Get the response streaming callback. */
+        callback_t m_callback{};
+
+        /** @brief Get the response streaming flag. */
+        bool m_stream{false};
+    };
+
+    /**
+     * @brief A JSON response, serializing a JSON object to the body.
+     *
+     * Sets "Content-Type: application/json".
+     */
+    struct json_response_t : public response_t {
+        /**
+         * @brief Default-construct an empty JSON response.
+         */
+        CXXAPI_INLINE constexpr json_response_t() = default;
+
+        /**
+         * @brief Construct a JSON response from a JSON object.
+         * @param body The JSON object to serialize.
+         * @param status_code The HTTP status code (default is 200 OK).
+         * @param headers Additional headers to include.
+         */
+        CXXAPI_INLINE json_response_t(const json_t::json_obj_t& body, e_status&& status_code = e_status::ok, headers_t&& headers = {}) {
+            m_body = body.empty() ? "" : json_t::serialize(body);
+
+            {
+                if (!headers.empty()) {
+                    for (auto& header : headers)
+                        m_headers[std::move(header.first)] = std::move(header.second);
+                }
+
+                m_headers.emplace("Content-Type", "application/json");
+            }
+
+            m_status = std::move(status_code);
+        }
+    };
+
+    /**
+     * @brief A file response, streaming a file from disk.
+     *
+     * Sets appropriate Content-Type, Content-Length, and ETag headers.
+     * On errors, returns an error status and plain-text message.
+     */
+    struct file_response_t : public response_t {
+        /**
+         * @brief Default-construct an empty file response.
+         */
+        CXXAPI_INLINE constexpr file_response_t() = default;
+
+        /**
+         * @brief Construct a file response for a given file path.
+         *
+         * If the file is missing or not regular, returns 404 or 400 with a text message.
+         * Otherwise sets up streaming callback sending file chunks.
+         *
+         * @param file_path Path to the file on disk.
+         * @param status_code The HTTP status code (default is 200 OK).
+         * @param headers Additional headers to include.
+         */
+        CXXAPI_INLINE file_response_t(
+            const boost::filesystem::path& file_path,
+
+            e_status&& status_code = e_status::ok,
+
+            headers_t&& headers = {}
+        ) {
+            if (!boost::filesystem::exists(file_path)) {
+                m_body = "File not found";
+
+                m_status = e_status::not_found;
+
+                return;
+            }
+
+            if (!boost::filesystem::is_regular_file(file_path)) {
+                m_body = "Bad request";
+
+                m_status = e_status::bad_request;
+
+                return;
+            }
+
+            m_stream = true;
+
+            try {
+                auto file_size = boost::filesystem::file_size(file_path);
+
+                if (!headers.empty()) {
+                    for (auto& header : headers)
+                        m_headers[std::move(header.first)] = std::move(header.second);
+                }
+
+                const auto content_type = mime_types_t::get(file_path);
+
+                m_headers.try_emplace("Content-Type", std::string(content_type));
+                m_headers.try_emplace("Content-Length", boost::lexical_cast<std::string>(file_size));
+
+                {
+                    auto last_write = boost::filesystem::last_write_time(file_path);
+                    auto etag_value = fmt::format("\"{}-{}\"", last_write, file_size);
+
+                    m_headers.emplace("ETag", std::move(etag_value));
+                }
+
+                m_status = std::move(status_code);
+
+                auto path_copy = file_path;
+
+                m_callback = [path_copy, file_size](boost::asio::ip::tcp::socket& socket) -> boost::asio::awaitable<void> {
+                    std::ifstream file_stream(path_copy.string(), std::ios::binary);
+
+                    if (!file_stream) {
+                        throw base_exception_t("Failed to open file");
+
+                        co_return;
+                    }
+
+                    std::array<char, 8192u> buffer{};
+
+                    std::streamsize total_sent{};
+
+                    while (total_sent < file_size && file_stream && socket.is_open()) {
+                        file_stream.read(buffer.data(), buffer.size());
+
+                        auto bytes_read = file_stream.gcount();
+
+                        if (bytes_read <= 0)
+                            break;
+
+                        co_await send_chunk_async(
+                            socket,
+
+                            std::string(buffer.data(), bytes_read)
+                        );
+
+                        total_sent += bytes_read;
+                    }
+                };
+            }
+            catch (const boost::filesystem::filesystem_error&) {
+                m_body = "Internal server error";
+
+                m_status = e_status::internal_server_error;
+            }
+            catch (const std::exception&) {
+                m_body = "Internal server error";
+
+                m_status = e_status::internal_server_error;
+            }
+        }
+    };
+
+    /**
+     * @brief A generic streaming response using a user-provided callback.
+     *
+     * Sets "Cache-Control: no-cache" and a default or specified Content-Type.
+     */
+    struct stream_response_t : public response_t {
+        /**
+         * @brief Default-construct an empty stream response.
+         */
+        CXXAPI_INLINE constexpr stream_response_t() = default;
+
+        /**
+         * @brief Construct a streaming response.
+         * @param callback The callback to invoke for streaming data.
+         * @param content_type The MIME type of the stream (default application/octet-stream).
+         * @param status_code The HTTP status code (default is 200 OK).
+         * @param headers Additional headers to include.
+         */
+        CXXAPI_INLINE stream_response_t(
+            callback_t&& callback,
+
+            std::string&& content_type = "application/octet-stream",
+            e_status&& status_code = e_status::ok,
+
+            headers_t&& headers = {}
+        ) {
+            m_callback = std::move(callback);
+
+            if (!headers.empty()) {
+                for (auto& header : headers)
+                    m_headers[std::move(header.first)] = std::move(header.second);
+            }
+
+            m_stream = true;
+
+            m_headers.emplace("Cache-Control", "no-cache");
+            m_headers.emplace("Content-Type", std::move(content_type));
+
+            m_status = std::move(status_code);
+        }
+    };
+
+    /**
+     * @brief A redirect response setting the Location header.
+     *
+     * Validates that status_code is a redirect code (3xx), defaults to 302 Found.
+     */
+    struct redirect_response_t : public response_t {
+        /**
+         * @brief Default-construct an empty redirect response.
+         */
+        CXXAPI_INLINE constexpr redirect_response_t() = default;
+
+        /**
+         * @brief Construct a redirect response to the given location.
+         *
+         * Enforces a valid 3xx status code, sets Location and text/plain content type.
+         *
+         * @param location The URL to redirect to.
+         * @param status_code The 3xx redirect status code (default is 302 Found).
+         * @param headers Additional headers to include.
+         */
+        CXXAPI_INLINE redirect_response_t(
+            const std::string_view& location,
+
+            e_status&& status_code = e_status::found,
+
+            headers_t&& headers = {}
+        ) {
+            m_body = "";
+
+            if (status_code != e_status::moved_permanently
+                && status_code != e_status::found
+                && status_code != e_status::see_other
+                && status_code != e_status::temporary_redirect
+                && status_code != e_status::permanent_redirect)
+                status_code = e_status::found;
+
+            m_status = std::move(status_code);
+
+            if (!headers.empty()) {
+                for (auto& header : headers)
+                    m_headers[std::move(header.first)] = std::move(header.second);
+            }
+
+            m_headers.emplace("Location", std::string(location));
+            m_headers.emplace("Content-Type", "text/plain");
+        }
+    };
+
+    enum struct e_response_class : std::uint8_t {
+        plain,
+        json
+    };
+
+    template <typename _class_t = response_t>
+    struct response_class_t {
+        static_assert(std::is_base_of_v<response_t, _class_t>, "Class must inherit from response_t");
+
+        static_assert(std::is_same_v<response_t, std::decay_t<_class_t>>
+            || std::is_same_v<json_response_t, std::decay_t<_class_t>>, "Class must not be response_t or json_response_t");
+
+      public:
+        CXXAPI_INLINE constexpr response_class_t() = default;
+
+        template <typename _body_t>
+        CXXAPI_INLINE static _class_t make_response(
+            _body_t&& body,
+
+            e_status&& status_code = e_status::ok,
+
+            headers_t&& headers = {}
+        ) {
+            return _class_t(
+                std::forward<_body_t>(body),
+
+                std::move(status_code),
+
+                std::move(headers)
+            );
+        }
+    };
+}
+
+#endif // CXXAPI_HTTP_RESPONSE_HXX

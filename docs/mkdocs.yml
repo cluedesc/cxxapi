@@ -1,0 +1,76 @@
+site_name: CXXAPI docs
+
+repo_name: cxxapi
+repo_url: https://github.com/cluedesc/cxxapi
+
+theme:
+  name: material
+
+  icon:
+    repo: fontawesome/brands/github
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+
+      primary: indigo
+      accent: indigo
+
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light theme
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+
+      primary: deep purple
+      accent: deep purple
+
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark theme
+
+
+  font:
+    text: "Inter"
+    code: "Fira Code"
+
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+
+    - search.highlight
+    - search.share
+    - search.suggest
+
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.action.edit
+
+    - toc.follow
+    - toc.integrate
+
+nav:
+  - Overview: index.md
+  - Getting started: getting-started.md
+  - Examples: examples.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+
+  - pymdownx.details
+
+  - pymdownx.superfences
+
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums: true

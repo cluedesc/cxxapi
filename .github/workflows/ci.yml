@@ -1,0 +1,79 @@
+name: CXXAPI CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+        json: [nlohmann c++20, glaze c++23]
+
+    steps:
+      - name: Checkout repository
+      
+        uses: actions/checkout@v4
+
+        with:
+          submodules: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          if [ "${{ matrix.compiler }}" = "clang++" ]; then
+            sudo apt-get install -y cmake clang-19 clang-tools-19 libssl-dev libfmt-dev wget tar redis libstdc++-14-dev libc++-19-dev liburing-dev
+          else
+            sudo apt-get install -y cmake g++ libssl-dev libfmt-dev wget tar redis libstdc++-14-dev libc++-19-dev liburing-dev
+          fi
+
+      - name: Build and install Boost
+        run: |
+          wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz
+          tar xzf boost_1_87_0.tar.gz
+
+          cd boost_1_87_0
+
+          ./bootstrap.sh --with-libraries=system,filesystem,iostreams
+
+          ./b2 -j$(nproc)
+
+          sudo ./b2 install
+
+          cd ..
+
+          sudo ldconfig
+
+      - name: Start Redis server
+        run: |
+          sudo systemctl start redis
+
+          redis-cli ping
+
+      - name: Configure CMake
+        env:
+          BOOST_ROOT: /usr/local
+          CMAKE_PREFIX_PATH: /usr/local/lib/cmake
+
+        run: |
+          COMPILER=$([[ "${{ matrix.compiler }}" == "clang++" ]] && echo "/usr/bin/clang++-19" || echo "g++")
+        
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER=${COMPILER} \
+            -DCXXAPI_USE_NLOHMANN_JSON=$([ "${{ matrix.json }}" = "nlohmann c++20" ] && echo ON || echo OFF) \
+            -DCXXAPI_USE_GLAZE_JSON=$([ "${{ matrix.json }}" = "glaze c++23" ] && echo ON || echo OFF)
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run tests
+        run: |
+          cd build
+          
+          ctest --output-on-failure
