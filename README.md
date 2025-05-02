@@ -3,7 +3,7 @@
 [![Docs](https://img.shields.io/badge/Docs-site-blue.svg)](https://cluedesc.github.io/cxxapi/examples/)
 [![Version](https://img.shields.io/badge/Version-1.0.0a-blue.svg)](.)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build](https://github.com/cluedesc/cxxapi-reworked/actions/workflows/ci.yml/badge.svg)](https://github.com/cluedesc/cxxapi-reworked/actions/workflows/ci.yml)
+[![Build](https://github.com/cluedesc/cxxapi-reworked/actions/workflows/ci.yml/badge.svg)](https://github.com/cluedesc/cxxapi/actions/workflows/ci.yml)
 
 ---
 
