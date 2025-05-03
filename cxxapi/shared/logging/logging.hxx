@@ -239,7 +239,7 @@ namespace shared {
                 "[{:%Y-%m-%d %H:%M:%S}] {} - {}\n",
 
                 fmt::styled(
-                    std::chrono::system_clock::time_point(std::chrono::system_clock::from_time_t(in_time_t)),
+                    *std::localtime(&in_time_t),
                     fmt::emphasis::bold | fg(fmt::rgb(245, 245, 184))
                 ),
 
@@ -290,7 +290,7 @@ namespace shared {
                     "[{:%Y-%m-%d %H:%M:%S}] {} - {}\n",
 
                     fmt::styled(
-                        std::chrono::system_clock::time_point(std::chrono::system_clock::from_time_t(in_time_t)),
+                        *std::localtime(&in_time_t),
                         fmt::emphasis::bold | fg(fmt::rgb(245, 245, 184))
                     ),
 
@@ -410,7 +410,7 @@ namespace shared {
                     "[{:%Y-%m-%d %H:%M:%S}] {} - {}\n",
 
                     fmt::styled(
-                        std::chrono::system_clock::time_point(std::chrono::system_clock::from_time_t(in_time_t)),
+                        *std::localtime(&in_time_t),
                         fmt::emphasis::bold | fg(fmt::rgb(245, 245, 184))
                     ),
 
@@ -464,7 +464,7 @@ namespace shared {
                         "[{:%Y-%m-%d %H:%M:%S}] {} - {}\n",
 
                         fmt::styled(
-                            std::chrono::system_clock::time_point(std::chrono::system_clock::from_time_t(in_time_t)),
+                            *std::localtime(&in_time_t),
                             fmt::emphasis::bold | fg(fmt::rgb(245, 245, 184))
                         ),
 
