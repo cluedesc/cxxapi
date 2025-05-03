@@ -57,48 +57,54 @@ namespace cxxapi::http {
          *
          * Builds a cookie string including optional attributes.
          *
-         * @param name The cookie name.
-         * @param value The cookie value.
-         * @param path The Path attribute (default "/").
-         * @param domain The Domain attribute (default none).
-         * @param secure If true, adds the Secure flag.
-         * @param http_only If true, adds the HttpOnly flag.
-         * @param max_age Max-Age attribute in seconds (0 means no Max-Age).
+         * @param cookie The cookie struct to add.
          */
-        CXXAPI_INLINE void set_cookie(
-            const std::string_view& name,
-            const std::string_view& value,
+        CXXAPI_INLINE void set_cookie(cookie_t cookie) {
+            if (cookie.m_name.rfind("__Secure-", 0) == 0 && !cookie.m_secure)
+                throw std::invalid_argument("__Secure- cookies require Secure flag");
 
-            const std::string_view& path = "/",
-            const std::string_view& domain = "",
+            if (cookie.m_name.rfind("__Host-", 0) == 0) {
+                if (!cookie.m_secure
+                    || cookie.m_domain != ""
+                    || cookie.m_path != "/") {
+                    throw std::invalid_argument("__Host- cookies require Secure, no Domain, Path=/");
+                }
+            }
 
-            bool secure = false,
-            bool http_only = false,
+            fmt::memory_buffer buf;
 
-            std::chrono::seconds max_age = std::chrono::seconds(0)
-        ) {
-            std::ostringstream oss{};
+            fmt::format_to(std::back_inserter(buf), "{}={}", cookie.m_name, cookie.m_value);
 
-            oss << name << "=" << value;
+            if (!cookie.m_domain.empty())
+                fmt::format_to(std::back_inserter(buf), "; Domain={}", cookie.m_domain);
 
-            if (!path.empty())
-                oss << "; Path=" << path << "; ";
+            if (!cookie.m_path.empty())
+                fmt::format_to(std::back_inserter(buf), "; Path={}", cookie.m_path);
 
-            if (!domain.empty())
-                oss << "; Domain=" << domain << "; ";
+            if (cookie.m_max_age.count() > 0) {
+                fmt::format_to(std::back_inserter(buf), "; Max-Age={}", cookie.m_max_age.count());
 
-            if (secure)
-                oss << "; Secure; ";
+                auto now = boost::posix_time::second_clock::universal_time();
 
-            if (http_only)
-                oss << "; HttpOnly; ";
+                auto exp = now + boost::posix_time::seconds{cookie.m_max_age.count()};
 
-            auto age_count = max_age.count();
+                auto expires = fmt::format("{} {}", boost::posix_time::to_iso_extended_string(exp), "GMT");
 
-            if (age_count > 0u)
-                oss << "; Max-Age=" << age_count << "; ";
+                expires = boost::posix_time::to_simple_string(exp);
 
-            m_cookies.emplace_back(std::move(oss.str()));
+                fmt::format_to(std::back_inserter(buf), "; Expires={}", expires);
+            }
+
+            if (cookie.m_secure) 
+                fmt::format_to(std::back_inserter(buf), "; Secure");
+
+            if (cookie.m_http_only)
+                fmt::format_to(std::back_inserter(buf), "; HttpOnly");
+            
+            if (!cookie.m_same_site.empty())
+                fmt::format_to(std::back_inserter(buf), "; SameSite={}", cookie.m_same_site);
+
+            m_cookies.emplace_back(std::move(fmt::to_string(buf)));
         }
 
       public:
@@ -405,8 +411,7 @@ namespace cxxapi::http {
     struct response_class_t {
         static_assert(std::is_base_of_v<response_t, _class_t>, "Class must inherit from response_t");
 
-        static_assert(std::is_same_v<response_t, std::decay_t<_class_t>>
-            || std::is_same_v<json_response_t, std::decay_t<_class_t>>, "Class must not be response_t or json_response_t");
+        static_assert(std::is_same_v<response_t, std::decay_t<_class_t>> || std::is_same_v<json_response_t, std::decay_t<_class_t>>, "Class must not be response_t or json_response_t");
 
       public:
         CXXAPI_INLINE constexpr response_class_t() = default;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project("cxxapi" VERSION 1.0.0 LANGUAGES CXX)
+project("cxxapi" VERSION 1.1.0 LANGUAGES CXX)
 
 if(POLICY CMP0144)
     cmake_policy(SET CMP0144 NEW)
@@ -65,8 +65,6 @@ elseif (CXXAPI_USE_NLOHMANN_JSON)
 endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-project("cxxapi" VERSION 1.0.0 LANGUAGES CXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_definitions(__MSVC_COMPILER__)

@@ -1,7 +1,7 @@
 # cxxapi
 
 [![Docs](https://img.shields.io/badge/Docs-site-blue.svg)](https://cluedesc.github.io/cxxapi/examples/)
-[![Version](https://img.shields.io/badge/Version-1.0.0a-blue.svg)](.)
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)](.)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Build](https://github.com/cluedesc/cxxapi-reworked/actions/workflows/ci.yml/badge.svg)](https://github.com/cluedesc/cxxapi/actions/workflows/ci.yml)
 
@@ -359,7 +359,7 @@ Installation via FetchContent from GIT_REPOSITORY
 FetchContent_Declare(
     cxxapi
     GIT_REPOSITORY https://github.com/cluedesc/cxxapi.git
-    GIT_TAG 1.0.0a
+    GIT_TAG 1.1.0
 )
 
 FetchContent_MakeAvailable(cxxapi)

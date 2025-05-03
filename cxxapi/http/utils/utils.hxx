@@ -14,6 +14,8 @@
 
 #include "multipart/multipart.hxx"
 
+#include "cookie/cookie.hxx"
+
 /**
  * @brief Namespace for HTTP-related utilities.
  */

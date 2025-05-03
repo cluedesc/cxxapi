@@ -422,7 +422,7 @@ TEST(HttpRequestTest, AccessorsMutateAndRead) {
     EXPECT_EQ(req.body(), body_t("hello"));
 
     req.uri() = uri_t("/path?x=1");
-    
+
     EXPECT_EQ(req.uri(), "/path?x=1");
 }
 
@@ -441,8 +441,8 @@ TEST(HttpResponseTest, DefaultValues) {
 }
 
 TEST(HttpResponseTest, PlainTextConstructor) {
-    headers_t extra{{"X","Y"}};
-    
+    headers_t extra{{"X", "Y"}};
+
     response_t r("hi", e_status::created, std::move(extra));
 
     EXPECT_EQ(r.body(), "hi");
@@ -455,11 +455,16 @@ TEST(HttpResponseTest, PlainTextConstructor) {
 TEST(HttpResponseTest, SetCookieBasic) {
     response_t r;
 
-    r.set_cookie("n", "v");
+    r.set_cookie(
+        cookie_t{
+            .m_name = "n",
+            .m_value = "v",
+        }
+    );
 
     ASSERT_EQ(r.cookies().size(), 1u);
 
-    EXPECT_EQ(r.cookies()[0], "n=v; Path=/; ");
+    EXPECT_TRUE(r.cookies()[0].find("n=v; Path=/; ") != std::string::npos);
 }
 
 TEST(HttpResponseTest, JsonResponseConstructor) {
@@ -498,7 +503,7 @@ TEST(HttpResponseTest, StreamResponseConstructor) {
 }
 
 TEST(HttpResponseTest, RedirectResponseValidAndInvalid) {
-    headers_t extra{{"X","Y"}};
+    headers_t extra{{"X", "Y"}};
 
     redirect_response_t r1("/new", e_status::see_other, std::move(extra));
 

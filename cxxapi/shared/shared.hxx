@@ -52,6 +52,8 @@
 
 #include <boost/iostreams/device/mapped_file.hpp>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include <boost/lexical_cast.hpp>
 
 #ifdef CXXAPI_USE_REDIS_IMPL

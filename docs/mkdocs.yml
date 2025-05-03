@@ -60,6 +60,7 @@ nav:
   - Overview: index.md
   - Getting started: getting-started.md
   - Examples: examples.md
+  - Extended examples: extended-examples.md
 
 plugins:
   - search
