@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project("cxxapi" VERSION 1.1.2 LANGUAGES CXX)
+project("cxxapi" VERSION 1.2.0 LANGUAGES CXX)
 
 if(POLICY CMP0144)
     cmake_policy(SET CMP0144 NEW)
