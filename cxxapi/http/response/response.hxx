@@ -95,12 +95,12 @@ namespace cxxapi::http {
                 fmt::format_to(std::back_inserter(buf), "; Expires={}", expires);
             }
 
-            if (cookie.m_secure) 
+            if (cookie.m_secure)
                 fmt::format_to(std::back_inserter(buf), "; Secure");
 
             if (cookie.m_http_only)
                 fmt::format_to(std::back_inserter(buf), "; HttpOnly");
-            
+
             if (!cookie.m_same_site.empty())
                 fmt::format_to(std::back_inserter(buf), "; SameSite={}", cookie.m_same_site);
 
@@ -402,20 +402,49 @@ namespace cxxapi::http {
         }
     };
 
+    /**
+     * @enum e_response_class
+     * @brief Enumerates the supported built-in response types.
+     *
+     * This enum is typically used to represent the type of HTTP response
+     * being generated, such as plain text or JSON.
+     */
     enum struct e_response_class : std::uint8_t {
-        plain,
-        json
+        plain, ///< A plain text response (e.g., text/plain).
+        json   ///< A JSON-formatted response (e.g., application/json).
     };
 
+    /**
+     * @brief A factory wrapper for generating typed responses.
+     *
+     * This template provides a static `make_response` method to construct
+     * a response of a specified type (e.g., `json_response_t`).
+     *
+     * @tparam _class_t The response class type to instantiate.
+     * Must inherit from `response_t` and be either `response_t` or `json_response_t`.
+     */
     template <typename _class_t = response_t>
     struct response_class_t {
         static_assert(std::is_base_of_v<response_t, _class_t>, "Class must inherit from response_t");
 
-        static_assert(std::is_same_v<response_t, std::decay_t<_class_t>> || std::is_same_v<json_response_t, std::decay_t<_class_t>>, "Class must not be response_t or json_response_t");
+        static_assert(std::is_same_v<response_t, std::decay_t<_class_t>> 
+            || std::is_same_v<json_response_t, std::decay_t<_class_t>>, "Class must not be response_t or json_response_t");
 
       public:
+        /**
+         * @brief Default constructor for the response factory.
+         */
         CXXAPI_INLINE constexpr response_class_t() = default;
 
+        /**
+         * @brief Construct a response of the specified type.
+         *
+         * @tparam _body_t The type of the response body.
+         * @param body The content to be sent as the response body.
+         * @param status_code HTTP status code (default is 200 OK).
+         * @param headers Optional additional HTTP headers.
+         * @return An instance of the specified response type.
+         */
         template <typename _body_t>
         CXXAPI_INLINE static _class_t make_response(
             _body_t&& body,

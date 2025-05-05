@@ -55,7 +55,7 @@ Basic REST API server
 ```C++
 #include <cxxapi.hxx>
 
-boost::asio::awaitable<cxxapi::http::response_t> async_handler(cxxapi::http::http_ctx_t&& ctx) {
+boost::asio::awaitable<cxxapi::http::response_t> async_handler(cxxapi::http::http_ctx_t ctx) {
     auto num = 0u;
 
     try {

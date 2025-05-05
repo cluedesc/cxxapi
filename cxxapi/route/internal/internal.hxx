@@ -141,16 +141,16 @@ namespace cxxapi::route::internal {
      * @tparam _fn_t Type to check.
      */
     template <typename _fn_t>
-    concept async_handler_c = requires(_fn_t fn, http::http_ctx_t&& ctx) {
+    concept async_handler_c = requires(_fn_t fn, http::http_ctx_t ctx) {
         { fn(std::move(ctx)) } -> std::same_as<boost::asio::awaitable<http::response_t>>;
-    } || is_awaitable_response_t<std::invoke_result_t<_fn_t, http::http_ctx_t&&>>::value;
+    } || is_awaitable_response_t<std::invoke_result_t<_fn_t, http::http_ctx_t>>::value;
 
     /**
      * @brief Concept for sync handler functions.
      * @tparam _fn_t Type to check.
      */
     template <typename _fn_t>
-    concept sync_handler_c = requires(_fn_t fn, http::http_ctx_t&& ctx) {
+    concept sync_handler_c = requires(_fn_t fn, http::http_ctx_t ctx) {
         { fn(std::move(ctx)) } -> std::same_as<http::response_t>;
     };
 }

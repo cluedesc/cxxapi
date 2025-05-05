@@ -51,20 +51,20 @@ namespace cxxapi {
      * @brief Configuration parameters for the cxxapi.
      */
     struct cxxapi_cfg_t {
-        /** @brief Hostname or IP address for the main service. */
+        /** @brief Hostname or IP address for the main service. (default: localhost) */
         std::string m_host{"localhost"};
 
-        /** @brief Port number for the main service. */
+        /** @brief Port number for the main service. (default: 8080) */
         std::string m_port{"8080"};
 
         /**
          * @brief Server-specific configuration parameters.
          */
         struct {
-            /** @brief Number of worker threads for the server. */
+            /** @brief Number of worker threads for the server. (default: 4) */
             std::int32_t m_workers{4u};
 
-            /** @brief Maximum number of simultaneous connections. */
+            /** @brief Maximum number of simultaneous connections. (default: 2048) */
             std::int32_t m_max_connections{2048u};
 
             /** @brief Maximum request size in bytes. (default: 100 MB) */
@@ -82,7 +82,7 @@ namespace cxxapi {
             /** @brief Maximum files size in memory. (default: 10 MB) */
             std::size_t m_max_files_size_in_memory{10485760u};
 
-            /** @brief Temp directory for temporary files. */
+            /** @brief Temp directory for temporary files. (default: /tmp/cxxapi_tmp) */
             boost::filesystem::path m_tmp_dir{"/tmp/cxxapi_tmp"};
         } m_server{};
 
@@ -90,15 +90,18 @@ namespace cxxapi {
          * @brief HTTP-specific configuration parameters.
          */
         struct http_t {
-            /** @brief Response class to use for internal HTTP responses. */
+            /** @brief Response class to use for internal HTTP responses. (default: plain) */
             http::e_response_class m_response_class{http::e_response_class::plain};
+
+            /** @brief Keep-alive timeout in seconds. (default: 30 seconds) */
+            std::chrono::seconds m_keep_alive_timeout{std::chrono::seconds(30)};
         } m_http{};
 
         /**
          * @brief Socket-specific configuration parameters.
          */
         struct {
-            /** @brief Enable or disable TCP_NODELAY option. */
+            /** @brief Enable or disable TCP_NODELAY option. (default: true) */
             bool m_tcp_no_delay{true};
 
             /** @brief Receive buffer size. (default: 512 KB) */
@@ -113,19 +116,19 @@ namespace cxxapi {
          * @brief Configuration for the internal CXXAPI logger.
          */
         struct logger_t {
-            /** @brief Minimum severity level to log. */
+            /** @brief Minimum severity level to log. (default: info) */
             e_log_level m_level{e_log_level::info};
 
-            /** @brief Whether to flush output immediately after each message. */
+            /** @brief Whether to flush output immediately after each message. (default: false) */
             bool m_force_flush{false};
 
-            /** @brief Enable asynchronous logging. */
+            /** @brief Enable asynchronous logging. (default: true) */
             bool m_async{true};
 
-            /** @brief Size of the internal log buffer. */
+            /** @brief Size of the internal log buffer. (default: 16384) */
             std::size_t m_buffer_size{16384u};
 
-            /** @brief Strategy for handling buffer overflows. */
+            /** @brief Strategy for handling buffer overflows. (default: discard_oldest) */
             c_logging::e_overflow_strategy m_strategy{c_logging::e_overflow_strategy::discard_oldest};
         };
 
@@ -151,7 +154,7 @@ namespace cxxapi {
          * @brief Starts the CXXAPI server with the given configuration.
          * @param cfg Configuration settings.
          */
-        void start(cxxapi_cfg_t&& cfg);
+        void start(cxxapi_cfg_t cfg);
 
         /**
          * @brief Stops the CXXAPI server.

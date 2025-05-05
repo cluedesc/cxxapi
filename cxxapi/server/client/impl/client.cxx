@@ -14,7 +14,7 @@ namespace cxxapi::server {
 
                 m_parsed_request = {};
 
-                m_buffer.clear();
+                m_buffer.consume(m_buffer.size());
 
                 boost::system::error_code error_code{};
 
@@ -43,14 +43,20 @@ namespace cxxapi::server {
 
                 http::request_t req{};
 
-                auto is_websocket = boost::beast::websocket::is_upgrade(m_parsed_request);
+                auto is_websocket = false;
+
+                if (!m_parsed_request.target().empty()) {
+                    is_websocket = boost::beast::websocket::is_upgrade(m_parsed_request);
+                }
+                else
+                    is_websocket = boost::beast::websocket::is_upgrade(hdr_req);
 
                 {
                     req.uri() = hdr_req.target();
                     req.method() = http::str_to_method(hdr_req.method_string());
 
                     for (auto& field : hdr_req)
-                        req.headers()[field.name_string()] = field.value();
+                        req.headers().emplace(field.name_string(), field.value());
                 }
 
                 auto parse = false;
@@ -92,7 +98,7 @@ namespace cxxapi::server {
                             tmp_file
                         );
 
-                        req.parse_path() = tmp_file;
+                        req.parse_path() = std::move(tmp_file);
                     }
                 }
 
@@ -116,7 +122,7 @@ namespace cxxapi::server {
                     if (error_code)
                         throw exceptions::client_exception_t(error_code.message(), 500u);
 
-                    m_parsed_request = parser.release();
+                    m_parsed_request = std::move(parser.release());
 
                     req.body() = std::move(m_parsed_request.body());
                 }
@@ -139,8 +145,7 @@ namespace cxxapi::server {
                 else {
                     co_await handle_request(std::move(req));
 
-                    if (m_close
-                        || !req.keep_alive())
+                    if (m_close)
                         break;
                 }
             }
@@ -304,15 +309,17 @@ namespace cxxapi::server {
                 co_await boost::beast::http::async_write(m_socket, response, boost::asio::use_awaitable);
             }
         }
+
+        co_return;
     }
 
     boost::asio::awaitable<void> client_t::handle_request(http::request_t&& req) {
         std::tuple<bool, std::size_t> catch_tuple{};
 
         try {
-            const auto response_data = co_await m_cxxapi._handle_request(std::move(req));
-
             auto keep_alive = req.keep_alive();
+
+            const auto response_data = co_await m_cxxapi._handle_request(std::move(req));
 
             if (response_data.m_stream) {
                 boost::beast::http::response<boost::beast::http::empty_body> response;
@@ -321,11 +328,11 @@ namespace cxxapi::server {
                     response.version(m_parsed_request.version());
 
                     {
-                        for (const auto& header : response_data.m_headers)
-                            response.insert(header.first, header.second);
+                        for (auto& header : response_data.m_headers)
+                            response.insert(std::move(header.first), std::move(header.second));
 
-                        for (std::size_t i{}; i < response_data.m_cookies.size(); i++)
-                            response.insert("Set-Cookie", response_data.m_cookies[i]);
+                        for (auto& cookie : response_data.m_cookies)
+                            response.insert("Set-Cookie", std::move(cookie));
                     }
 
                     response.chunked(true);
@@ -334,9 +341,15 @@ namespace cxxapi::server {
 
                     if (keep_alive) {
                         response.keep_alive(true);
+
+                        response.set(boost::beast::http::field::connection, "keep-alive");
+
+                        response.set(boost::beast::http::field::keep_alive, fmt::format("timeout={}", m_cxxapi.cfg().m_http.m_keep_alive_timeout));
                     }
                     else {
                         response.keep_alive(false);
+
+                        response.set(boost::beast::http::field::connection, "close");
 
                         m_close = true;
                     }
@@ -356,6 +369,12 @@ namespace cxxapi::server {
                     co_await boost::asio::async_write(m_socket, boost::asio::buffer("0\r\n\r\n"), boost::asio::use_awaitable);
                 }
 
+                if (m_close) {
+                    boost::system::error_code ignored_error_code{};
+
+                    m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ignored_error_code);
+                }
+
                 co_return;
             }
 
@@ -364,11 +383,11 @@ namespace cxxapi::server {
             response.version(m_parsed_request.version());
 
             {
-                for (const auto& header : response_data.m_headers)
-                    response.insert(header.first, header.second);
+                for (auto& header : response_data.m_headers)
+                    response.insert(std::move(header.first), std::move(header.second));
 
-                for (std::size_t i{}; i < response_data.m_cookies.size(); i++)
-                    response.insert("Set-Cookie", response_data.m_cookies[i]);
+                for (auto& cookie : response_data.m_cookies)
+                    response.insert("Set-Cookie", std::move(cookie));
             }
 
             response.body() = std::move(response_data.m_body);
@@ -377,9 +396,15 @@ namespace cxxapi::server {
 
             if (keep_alive) {
                 response.keep_alive(true);
+
+                response.set(boost::beast::http::field::connection, "keep-alive");
+
+                response.set(boost::beast::http::field::keep_alive, fmt::format("timeout={}", m_cxxapi.cfg().m_http.m_keep_alive_timeout));
             }
             else {
                 response.keep_alive(false);
+
+                response.set(boost::beast::http::field::connection, "close");
 
                 m_close = true;
             }
@@ -388,8 +413,7 @@ namespace cxxapi::server {
 
             co_await boost::beast::http::async_write(m_socket, response, boost::asio::use_awaitable);
 
-            if (m_close 
-                || !response.keep_alive()) {
+            if (m_close) {
                 boost::system::error_code ignored_error_code{};
 
                 m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ignored_error_code);

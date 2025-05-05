@@ -3,7 +3,7 @@
 ## Interacting with cookies
 
 ```cpp
-cxxapi::http::response_t handler(cxxapi::http::http_ctx_t&& ctx) {
+cxxapi::http::response_t handler(cxxapi::http::http_ctx_t ctx) {
     // get cookie from request
     auto test_cookie = ctx.request().cookie("Test");
 
@@ -73,7 +73,7 @@ struct file_chunk_provider_t {
     std::size_t m_chunk{};
 };
 
-boost::asio::awaitable<cxxapi::http::response_t> get_file(cxxapi::http::http_ctx_t&& ctx) {
+boost::asio::awaitable<cxxapi::http::response_t> get_file(cxxapi::http::http_ctx_t ctx) {
     try {
         const auto file_chunks = std::make_shared<file_chunk_provider_t>(
             co_await boost::asio::this_coro::executor, "file_path"
@@ -127,7 +127,7 @@ boost::asio::awaitable<cxxapi::http::response_t> get_file(cxxapi::http::http_ctx
 ## Interacting with request files
 
 ```cpp
-boost::asio::awaitable<cxxapi::http::response_t> upload_file(cxxapi::http::http_ctx_t&& ctx) {
+boost::asio::awaitable<cxxapi::http::response_t> upload_file(cxxapi::http::http_ctx_t ctx) {
     try {
         cxxapi::http::file_t file;
 

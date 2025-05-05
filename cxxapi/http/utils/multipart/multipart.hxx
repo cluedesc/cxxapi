@@ -22,7 +22,7 @@ namespace cxxapi::http {
          * @return A map of file names to uploaded file data.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<files_t> parse_async(
-            const boost::asio::any_io_executor& executor,
+            boost::asio::any_io_executor& executor,
 
             std::string_view body,
             std::string_view boundary,
@@ -152,7 +152,7 @@ namespace cxxapi::http {
          * @param max_size_files_in_memory The maximum size of files in memory.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<files_t> parse_from_file_async(
-            const boost::asio::any_io_executor& executor,
+            boost::asio::any_io_executor& executor,
 
             const boost::filesystem::path& path,
 
@@ -578,7 +578,7 @@ namespace cxxapi::http {
          * @param ctype The content type of the part.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<void> parse_part_headers(
-            const boost::asio::any_io_executor& executor,
+            boost::asio::any_io_executor& executor,
 
             std::string_view headers_blob,
 

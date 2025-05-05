@@ -56,7 +56,7 @@ namespace cxxapi::http {
          * @param max_size_files_in_memory Maximum total size of files in memory.
          */
         CXXAPI_NOINLINE boost::asio::awaitable<void> init_parsing(
-            const boost::asio::any_io_executor& executor,
+            boost::asio::any_io_executor& executor,
 
             std::size_t chunk_size,
             std::size_t chunk_size_disk,
@@ -138,7 +138,7 @@ namespace cxxapi::http {
          * @return Awaitable http_ctx_t instance.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<http_ctx_t> create(
-            const boost::asio::any_io_executor& executor,
+            boost::asio::any_io_executor& executor,
             
             const request_t& request,
             const params_t& params,

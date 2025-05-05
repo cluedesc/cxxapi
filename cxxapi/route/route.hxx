@@ -20,14 +20,14 @@ namespace cxxapi::route {
          * @param ctx HTTP context containing request data.
          * @return HTTP response to send back.
          */
-        virtual http::response_t handle(http::http_ctx_t&& ctx) const = 0;
+        virtual http::response_t handle(http::http_ctx_t ctx) const = 0;
 
         /**
          * @brief Handle an HTTP request asynchronously.
          * @param ctx HTTP context containing request data.
          * @return Awaitable HTTP response to send back.
          */
-        virtual boost::asio::awaitable<http::response_t> handle_async(http::http_ctx_t&& ctx) const = 0;
+        virtual boost::asio::awaitable<http::response_t> handle_async(http::http_ctx_t ctx) const = 0;
 
         /**
          * @brief Check if this route uses asynchronous handling.
@@ -69,7 +69,7 @@ namespace cxxapi::route {
          * @return HTTP response to send back.
          * @throws base_exception_t if called on async handler.
          */
-        CXXAPI_INLINE http::response_t handle(http::http_ctx_t&& ctx) const override {
+        CXXAPI_INLINE http::response_t handle(http::http_ctx_t ctx) const override {
             if constexpr (internal::sync_handler_c<_fn_t>)
                 return m_fn(std::move(ctx));
 
@@ -81,7 +81,7 @@ namespace cxxapi::route {
          * @param ctx HTTP context containing request data.
          * @return Awaitable HTTP response to send back.
          */
-        CXXAPI_NOINLINE boost::asio::awaitable<http::response_t> handle_async(http::http_ctx_t&& ctx) const override {
+        CXXAPI_NOINLINE boost::asio::awaitable<http::response_t> handle_async(http::http_ctx_t ctx) const override {
             if constexpr (internal::async_handler_c<_fn_t>)
                 co_return co_await m_fn(std::move(ctx));
 

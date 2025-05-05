@@ -22,7 +22,7 @@ namespace cxxapi::http {
          * @param content_type MIME type of the file.
          * @param data File data as a vector of bytes.
          */
-        CXXAPI_INLINE file_t(std::string&& name, std::string&& content_type, std::vector<char>&& data)
+        CXXAPI_INLINE file_t(std::string name, std::string content_type, std::vector<char> data)
             : m_name(std::move(name)), m_content_type(std::move(content_type)), m_data(std::move(data)), m_in_memory(true) {
         }
 
@@ -32,7 +32,7 @@ namespace cxxapi::http {
          * @param content_type MIME type of the file.
          * @param temp_path Path to the temporary file.
          */
-        CXXAPI_INLINE file_t(std::string&& name, std::string&& content_type, boost::filesystem::path&& temp_path)
+        CXXAPI_INLINE file_t(std::string name, std::string content_type, boost::filesystem::path temp_path)
             : m_name(std::move(name)), m_content_type(std::move(content_type)), m_temp_path(std::move(temp_path)), m_in_memory(false) {
         }
 

@@ -140,9 +140,9 @@ namespace cxxapi::route::internal {
 
     /**
      * @brief Explicit template instantiation for trie_node_t 
-     *        with std::function<http::response_t(http::http_ctx_t&&)> as the template parameter.
+     *        with std::function<http::response_t(http::http_ctx_t)> as the template parameter.
      */
-    template struct trie_node_t<std::function<http::response_t(http::http_ctx_t&&)>>;
+    template struct trie_node_t<std::function<http::response_t(http::http_ctx_t)>>;
 
     /**
      * @brief Explicit template instantiation for trie_node_t with std::shared_ptr<route_t> as the template parameter.

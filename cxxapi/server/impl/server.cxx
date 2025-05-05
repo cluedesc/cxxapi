@@ -254,6 +254,16 @@ namespace cxxapi::server {
                         g_logging->log(e_log_level::error, "[Server] Failed to set socket option: {}", error_code.message());
 #endif // CXXAPI_USE_LOGGING_IMPL
 
+                        boost::system::error_code close_ec{};
+
+                        socket.close(close_ec);
+
+                        if (close_ec) {
+#ifdef CXXAPI_USE_LOGGING_IMPL
+                            g_logging->log(e_log_level::error, "[Server] Failed to close socket after error: {}", close_ec.message());
+#endif
+                        }
+
                         continue;
                     }
                 }

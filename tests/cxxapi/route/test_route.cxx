@@ -6,7 +6,7 @@ using namespace cxxapi::route;
 using namespace cxxapi::http;
 
 TEST(RouteTest, SyncHandlerCreationAndExecution) {
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Hello", e_status::ok);
     };
 
@@ -22,7 +22,7 @@ TEST(RouteTest, SyncHandlerCreationAndExecution) {
 }
 
 TEST(RouteTest, AsyncHandlerCreationAndExecution) {
-    auto handler = [](http_ctx_t&& ctx) -> boost::asio::awaitable<response_t> {
+    auto handler = [](http_ctx_t ctx) -> boost::asio::awaitable<response_t> {
         co_return response_t("Async", e_status::ok);
     };
 
@@ -51,9 +51,9 @@ TEST(RouteTest, AsyncHandlerCreationAndExecution) {
 }
 
 TEST(RouteTest, TrieNodeInsertAndFind) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Found", e_status::ok);
     };
 
@@ -70,9 +70,9 @@ TEST(RouteTest, TrieNodeInsertAndFind) {
 }
 
 TEST(RouteTest, TrieNodeDynamicSegments) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Dynamic", e_status::ok);
     };
 
@@ -87,9 +87,9 @@ TEST(RouteTest, TrieNodeDynamicSegments) {
 }
 
 TEST(RouteTest, TrieNodeNormalization) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Normalized", e_status::ok);
     };
 
@@ -105,27 +105,27 @@ TEST(RouteTest, TrieNodeNormalization) {
 }
 
 TEST(RouteTest, HandlerConcepts) {
-    auto sync_handler = [](http_ctx_t&& ctx) -> response_t {
+    auto sync_handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Sync", e_status::ok);
     };
 
-    auto async_handler = [](http_ctx_t&& ctx) -> boost::asio::awaitable<response_t> {
+    auto async_handler = [](http_ctx_t ctx) -> boost::asio::awaitable<response_t> {
         co_return response_t("Async", e_status::ok);
     };
 
     EXPECT_TRUE(cxxapi::route::internal::sync_handler_c<decltype(sync_handler)>);
     EXPECT_TRUE(cxxapi::route::internal::async_handler_c<decltype(async_handler)>);
 
-    auto invalid_handler = [](http_ctx_t&& ctx) -> int { return 42; };
+    auto invalid_handler = [](http_ctx_t ctx) -> int { return 42; };
 
     EXPECT_FALSE(cxxapi::route::internal::sync_handler_c<decltype(invalid_handler)>);
     EXPECT_FALSE(cxxapi::route::internal::async_handler_c<decltype(invalid_handler)>);
 }
 
 TEST(RouteTest, TrieNodeSpecialCharacters) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Special", e_status::ok);
     };
 
@@ -140,9 +140,9 @@ TEST(RouteTest, TrieNodeSpecialCharacters) {
 }
 
 TEST(RouteTest, TrieNodeEmptyPath) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Root", e_status::ok);
     };
 
@@ -155,13 +155,13 @@ TEST(RouteTest, TrieNodeEmptyPath) {
 }
 
 TEST(RouteTest, TrieNodeDuplicateInsert) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler1 = [](http_ctx_t&& ctx) -> response_t {
+    auto handler1 = [](http_ctx_t ctx) -> response_t {
         return response_t("First", e_status::ok);
     };
 
-    auto handler2 = [](http_ctx_t&& ctx) -> response_t {
+    auto handler2 = [](http_ctx_t ctx) -> response_t {
         return response_t("Second", e_status::ok);
     };
 
@@ -170,9 +170,9 @@ TEST(RouteTest, TrieNodeDuplicateInsert) {
 }
 
 TEST(RouteTest, TrieNodeMultipleDynamicSegments) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Multiple", e_status::ok);
     };
 
@@ -188,9 +188,9 @@ TEST(RouteTest, TrieNodeMultipleDynamicSegments) {
 }
 
 TEST(RouteTest, TrieNodeInvalidDynamicSegment) {
-    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t&&)>> node;
+    cxxapi::route::internal::trie_node_t<std::function<response_t(http_ctx_t)>> node;
 
-    auto handler = [](http_ctx_t&& ctx) -> response_t {
+    auto handler = [](http_ctx_t ctx) -> response_t {
         return response_t("Invalid", e_status::ok);
     };
 
@@ -200,13 +200,13 @@ TEST(RouteTest, TrieNodeInvalidDynamicSegment) {
 }
 
 TEST(RouteTest, HandlerConceptVariants) {
-    auto sync_handler_variant = [](http_ctx_t&& ctx) -> response_t {
+    auto sync_handler_variant = [](http_ctx_t ctx) -> response_t {
         return response_t("Variant", e_status::created);
     };
 
     EXPECT_TRUE(cxxapi::route::internal::sync_handler_c<decltype(sync_handler_variant)>);
 
-    auto async_handler_variant = [](http_ctx_t&& ctx) -> boost::asio::awaitable<response_t> {
+    auto async_handler_variant = [](http_ctx_t ctx) -> boost::asio::awaitable<response_t> {
         co_return response_t("Variant", e_status::accepted);
     };
 

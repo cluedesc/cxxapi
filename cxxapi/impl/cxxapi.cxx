@@ -1,7 +1,7 @@
 #include <cxxapi.hxx>
 
 namespace cxxapi {
-    void c_cxxapi::start(cxxapi_cfg_t&& cfg) {
+    void c_cxxapi::start(cxxapi_cfg_t cfg) {
         m_cfg = std::move(cfg);
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
@@ -231,7 +231,8 @@ namespace cxxapi {
 
         for (auto it = m_middlewares.rbegin(); it != m_middlewares.rend(); ++it) {
             auto middleware = *it;
-            auto next_chain = chain;
+            
+            auto next_chain = std::move(chain);
 
             chain = [middleware, next_chain](const http::request_t& req)
                 -> boost::asio::awaitable<http::response_t> {

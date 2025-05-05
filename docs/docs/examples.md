@@ -6,7 +6,7 @@
 #include <cxxapi.hxx>
 
 // Some async handler
-boost::asio::awaitable<cxxapi::http::response_t> async_handler(cxxapi::http::http_ctx_t&& ctx) {
+boost::asio::awaitable<cxxapi::http::response_t> async_handler(cxxapi::http::http_ctx_t ctx) {
     auto num = 0u;
 
     try {
@@ -35,7 +35,7 @@ boost::asio::awaitable<cxxapi::http::response_t> async_handler(cxxapi::http::htt
     co_return response;
 }
 
-cxxapi::http::response_t sync_handler(cxxapi::http::http_ctx_t&& ctx) {
+cxxapi::http::response_t sync_handler(cxxapi::http::http_ctx_t ctx) {
     auto num = 0u;
 
     try {

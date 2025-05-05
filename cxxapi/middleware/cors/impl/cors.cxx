@@ -34,22 +34,18 @@ namespace cxxapi::middleware::cors {
         }
     }
 
-    c_cors_middleware::~c_cors_middleware() {
-        // ...
-    }
-
     boost::asio::awaitable<http::response_t> c_cors_middleware::handle(
         const http::request_t& request,
+        
         std::function<boost::asio::awaitable<http::response_t>(const http::request_t&)> next
     ) {
         std::string origin{};
 
         auto it = request.headers().find("Origin");
 
-        if (it != request.headers().end()) {
+        if (it != request.headers().end()) 
             origin = it->second;
-        }
-
+        
         if (request.method() == http::e_method::options) {
             http::response_t response{};
 
@@ -60,37 +56,32 @@ namespace cxxapi::middleware::cors {
             if (m_options.m_allow_all_methods) {
                 response.m_headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD";
             }
-            else if (!m_options.m_allowed_methods.empty()) {
+            else if (!m_options.m_allowed_methods.empty()) 
                 response.m_headers["Access-Control-Allow-Methods"] =
                     fmt::format("{}", fmt::join(m_options.m_allowed_methods, ", "));
-            }
-
+        
             std::string requested_headers{};
 
             auto req_headers_it = request.headers().find("Access-Control-Request-Headers");
 
-            if (req_headers_it != request.headers().end()) {
+            if (req_headers_it != request.headers().end()) 
                 requested_headers = req_headers_it->second;
-            }
-
+            
             if (m_options.m_allow_all_headers) {
                 if (!requested_headers.empty()) {
                     response.m_headers["Access-Control-Allow-Headers"] = requested_headers;
                 }
-                else {
+                else 
                     response.m_headers["Access-Control-Allow-Headers"] =
-                        "Content-Type, Authorization, X-Requested-With, Accept";
-                }
+                        "Content-Type, Authorization, X-Requested-With, Accept";              
             }
-            else if (!m_options.m_allowed_headers.empty()) {
+            else if (!m_options.m_allowed_headers.empty()) 
                 response.m_headers["Access-Control-Allow-Headers"] =
                     fmt::format("{}", fmt::join(m_options.m_allowed_headers, ", "));
-            }
-
-            if (m_options.m_max_age > 0) {
+            
+            if (m_options.m_max_age > 0) 
                 response.m_headers["Access-Control-Max-Age"] = std::to_string(m_options.m_max_age);
-            }
-
+            
             co_return response;
         }
 
@@ -102,10 +93,9 @@ namespace cxxapi::middleware::cors {
     }
 
     bool c_cors_middleware::is_origin_allowed(const std::string& origin) const {
-        if (m_options.m_allow_all_origins) {
+        if (m_options.m_allow_all_origins) 
             return true;
-        }
-
+        
         return m_origins_set.find(origin) != m_origins_set.end();
     }
 
@@ -116,15 +106,13 @@ namespace cxxapi::middleware::cors {
         else if (!origin.empty() && is_origin_allowed(origin)) {
             response.headers()["Access-Control-Allow-Origin"] = origin;
 
-            if (m_options.m_allow_credentials) {
+            if (m_options.m_allow_credentials) 
                 response.headers()["Access-Control-Allow-Credentials"] = "true";
-            }
         }
 
-        if (!m_options.m_exposed_headers.empty()) {
+        if (!m_options.m_exposed_headers.empty()) 
             response.headers()["Access-Control-Expose-Headers"] =
-                fmt::format("{}", fmt::join(m_options.m_exposed_headers, ", "));
-        }
+                fmt::format("{}", fmt::join(m_options.m_exposed_headers, ", "));    
     }
 }
 #endif // CXXAPI_USE_BUILTIN_MIDDLEWARES_IMPL

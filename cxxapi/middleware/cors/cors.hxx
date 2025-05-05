@@ -37,7 +37,7 @@ namespace cxxapi::middleware::cors {
               m_exposed_headers(),
 
               m_allow_credentials(true),
-              m_max_age(86400) {
+              m_max_age(86400u) {
         }
 
       public:
@@ -88,7 +88,7 @@ namespace cxxapi::middleware::cors {
         /**
          * @brief Destructor for the CORS middleware.
          */
-        ~c_cors_middleware() override;
+        CXXAPI_INLINE ~c_cors_middleware() override = default;
 
       public:
         /**
