@@ -1,6 +1,6 @@
 /**
  * @file logging.hxx
- * @brief Asynchronous logging system with buffering and overflow strategies.
+ * @brief Sync/Async logging system with buffering and overflow strategies.
  */
 
 #ifndef CXXAPI_SHARED_LOGGING_HXX

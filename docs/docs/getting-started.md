@@ -96,7 +96,7 @@ target_link_libraries(YOUR_TARGET PRIVATE cxxapi::cxxapi)
 FetchContent_Declare(
     cxxapi
     GIT_REPOSITORY https://github.com/cluedesc/cxxapi.git
-    GIT_TAG 1.2.0
+    GIT_TAG 1.3.0
 )
 
 FetchContent_MakeAvailable(cxxapi)

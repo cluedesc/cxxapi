@@ -25,5 +25,5 @@ It leverages Boost.Asio coroutines, OpenSSL, fmt, nlohmann or Glaze json variant
     - Log levels, overflow strategies
     - Colorized output
 
-- **Redis integration:** async client with c++20 coroutines
+- **Redis integration:** async client (support connections pool) with c++20 coroutines
 - **Postgres integration:** soon...
