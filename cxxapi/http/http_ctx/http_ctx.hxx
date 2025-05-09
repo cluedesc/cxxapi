@@ -1,6 +1,10 @@
 /**
  * @file http_ctx.hxx
- * @brief HTTP context for handling request data and parsing.
+ * @brief Defines the HTTP context for request handling and multipart parsing in CXXAPI.
+ *
+ * Provides a utility structure (`http_ctx_t`) for managing HTTP request data,
+ * parameters, and file uploads. Includes support for asynchronous parsing of
+ * multipart/form-data payloads with resource limits and disk fallback.
  */
 
 #ifndef CXXAPI_HTTP_HTTP_CTX_HXX
@@ -8,7 +12,14 @@
 
 namespace cxxapi::http {
     /**
-     * @brief HTTP context structure for handling request data and parsing.
+     * @brief HTTP context for managing request data, parameters, and uploaded files.
+     *
+     * Encapsulates the lifecycle of an HTTP request, including safe parsing of
+     * multipart/form-data. Provides access to request content, query/form parameters,
+     * and uploaded files through a unified interface.
+     *
+     * Supports asynchronous initialization and chunked parsing with configurable
+     * memory and disk usage thresholds.
      */
     struct http_ctx_t {
         /**
@@ -135,7 +146,7 @@ namespace cxxapi::http {
          * @param chunk_size_disk Size of the chunk for disk operations.
          * @param max_size_file_in_memory Maximum size of a file in memory.
          * @param max_size_files_in_memory Maximum total size of files in memory.
-         * @return Awaitable http_ctx_t instance.
+         * @return Awaitable self object.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<http_ctx_t> create(
             boost::asio::any_io_executor& executor,
@@ -169,7 +180,7 @@ namespace cxxapi::http {
         /**
          * @brief Retrieves a file by field name from the parsed multipart data.
          * @param field_name Name of the file field.
-         * @return Pointer to the file_t object or nullptr if not found.
+         * @return Pointer to the file object or nullptr if not found.
          */
         CXXAPI_INLINE file_t* file(const std::string& field_name) {
             auto it = m_files.find(field_name);
@@ -179,20 +190,20 @@ namespace cxxapi::http {
 
       public:
         /**
-         * @brief Getter for the HTTP request object.
-         * @return Reference to the request_t object.
+         * @brief Get the HTTP request object (mutable).
+         * @return Reference to the request object.
          */
         CXXAPI_INLINE auto& request() { return m_request; }
 
         /**
-         * @brief Getter for the request parameters.
-         * @return Reference to the params_t object.
+         * @brief Get the request parameters (mutable).
+         * @return Reference to the params object.
          */
         CXXAPI_INLINE auto& params() { return m_params; }
 
         /**
-         * @brief Getter for the parsed files.
-         * @return Reference to the files_t container.
+         * @brief Get for the parsed files (mutable).
+         * @return Reference to the files container.
          */
         CXXAPI_INLINE auto& files() { return m_files; }
 

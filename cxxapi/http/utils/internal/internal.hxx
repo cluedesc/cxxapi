@@ -6,9 +6,6 @@
 #ifndef CXXAPI_HTTP_UTILS_INTERNAL_HXX
 #define CXXAPI_HTTP_UTILS_INTERNAL_HXX
 
-/**
- * @brief Internal namespace for HTTP utilities.
- */
 namespace cxxapi::http::internal {
     /**
      * @brief Case-insensitive comparator for string views.

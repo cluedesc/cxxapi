@@ -8,9 +8,6 @@
 
 #include "utils/utils.hxx"
 
-/**
- * @brief HTTP-related types, status codes, methods, and utilities.
- */
 namespace cxxapi::http {
     /** @brief Type alias for HTTP URI. */
     using uri_t = std::string;

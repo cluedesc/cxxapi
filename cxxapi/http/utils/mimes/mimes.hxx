@@ -6,9 +6,6 @@
 #ifndef CXXAPI_HTTP_UTILS_MIMES_HXX
 #define CXXAPI_HTTP_UTILS_MIMES_HXX
 
-/**
- * @brief Namespace for HTTP-related types and utilities.
- */
 namespace cxxapi::http {
     /**
      * @brief Provides MIME type lookup for file extensions.

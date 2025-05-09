@@ -1,3 +1,8 @@
+/**
+ * @file cookie.hxx
+ * @brief Represents an HTTP cookie.
+ */
+
 #ifndef CXXAPI_HTTP_UTILS_COOKIE_HXX
 #define CXXAPI_HTTP_UTILS_COOKIE_HXX
 

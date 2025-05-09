@@ -123,31 +123,31 @@ namespace cxxapi::http {
 
       public:
         /**
-         * @brief Get the file name.
+         * @brief Get the file name (read-only).
          * @return Reference to the file name string.
          */
         CXXAPI_INLINE const auto& name() const { return m_name; }
 
         /**
-         * @brief Get the MIME type of the file.
+         * @brief Get the MIME type of the file (read-only).
          * @return Reference to the content type string.
          */
         CXXAPI_INLINE const auto& content_type() const { return m_content_type; }
 
         /**
-         * @brief Get the file data (for in-memory files).
+         * @brief Get the file data (for in-memory files) (read-only).
          * @return Reference to the data vector.
          */
         CXXAPI_INLINE const auto& data() const { return m_data; }
 
         /**
-         * @brief Get the path to the temporary file (if not in memory).
+         * @brief Get the path to the temporary file (if not in memory) (read-only).
          * @return Reference to the temporary file path.
          */
         CXXAPI_INLINE const auto& temp_path() const { return m_temp_path; }
 
         /**
-         * @brief Check if the file is stored in memory.
+         * @brief Check if the file is stored in memory (read-only).
          * @return True if in memory, false if backed by a temp file.
          */
         CXXAPI_INLINE const auto& in_memory() const { return m_in_memory; }

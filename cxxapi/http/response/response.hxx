@@ -1,6 +1,6 @@
 /**
  * @file response.hxx
- * @brief HTTP response abstractions including plain text, etc.
+ * @brief HTTP response abstractions.
  */
 
 #ifndef CXXAPI_HTTP_RESPONSE_HXX
@@ -21,12 +21,12 @@ namespace cxxapi::http {
 
       public:
         /**
-         * @brief Default-construct a new empty response.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE constexpr response_t() = default;
 
         /**
-         * @brief Virtual destructor to allow polymorphic cleanup.
+         * @brief Virtual destructor.
          */
         CXXAPI_INLINE virtual ~response_t() = default;
 
@@ -53,11 +53,10 @@ namespace cxxapi::http {
 
       public:
         /**
-         * @brief Add a Set-Cookie header for this response.
+         * @brief Add a Set-Cookie header for response.
+         * @param cookie The cookie struct to add.
          *
          * Builds a cookie string including optional attributes.
-         *
-         * @param cookie The cookie struct to add.
          */
         CXXAPI_INLINE void set_cookie(cookie_t cookie) {
             if (cookie.m_name.rfind("__Secure-", 0) == 0 && !cookie.m_secure)
@@ -109,58 +108,58 @@ namespace cxxapi::http {
 
       public:
         /**
-         * @brief Access the body for reading.
-         * @return Reference to the body_t struct.
+         * @brief Get the body (mutable).
+         * @return Reference to the body struct.
          */
         CXXAPI_INLINE auto& body() { return m_body; }
 
         /**
-         * @brief Access the headers for reading.
-         * @return Reference to the headers_t struct.
+         * @brief Get the headers (mutable).
+         * @return Reference to the headers struct.
          */
         CXXAPI_INLINE auto& headers() { return m_headers; }
 
         /**
-         * @brief Access the cookies for reading.
-         * @return Reference to the cookies_t struct.
+         * @brief Get the cookies (mutable).
+         * @return Reference to the cookies struct.
          */
         CXXAPI_INLINE auto& cookies() { return m_cookies; }
 
         /**
-         * @brief Access the status for reading.
-         * @return Reference to the e_status enum.
+         * @brief Get the status (mutable).
+         * @return Reference to the status enum.
          */
         CXXAPI_INLINE auto& status() { return m_status; }
 
         /**
-         * @brief Access the cookies for reading.
-         * @return Reference to the callback_t struct.
+         * @brief Get the cookies (mutable).
+         * @return Reference to the callback struct.
          */
         CXXAPI_INLINE auto& callback() { return m_callback; }
 
         /**
-         * @brief Access the streaming flag.
+         * @brief Get the streaming flag (mutable).
          * @return Reference to the streaming flag.
          */
         CXXAPI_INLINE auto& stream() { return m_stream; }
 
       public:
-        /** @brief Get the response body. */
+        /** @brief Body. */
         body_t m_body{};
 
-        /** @brief Get the response headers. */
+        /** @brief Headers. */
         headers_t m_headers{};
 
-        /** @brief Get the response cookies. */
+        /** @brief Cookies. */
         cookies_t m_cookies{};
 
-        /** @brief Get the response status code. */
+        /** @brief Status code. */
         e_status m_status{e_status::ok};
 
-        /** @brief Get the response streaming callback. */
+        /** @brief Streaming callback. */
         callback_t m_callback{};
 
-        /** @brief Get the response streaming flag. */
+        /** @brief Streaming flag. */
         bool m_stream{false};
     };
 
@@ -171,7 +170,7 @@ namespace cxxapi::http {
      */
     struct json_response_t : public response_t {
         /**
-         * @brief Default-construct an empty JSON response.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE constexpr json_response_t() = default;
 
@@ -205,19 +204,18 @@ namespace cxxapi::http {
      */
     struct file_response_t : public response_t {
         /**
-         * @brief Default-construct an empty file response.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE constexpr file_response_t() = default;
 
         /**
          * @brief Construct a file response for a given file path.
-         *
-         * If the file is missing or not regular, returns 404 or 400 with a text message.
-         * Otherwise sets up streaming callback sending file chunks.
-         *
          * @param file_path Path to the file on disk.
          * @param status_code The HTTP status code (default is 200 OK).
          * @param headers Additional headers to include.
+         *
+         * If the file is missing or not regular, returns 404 or 400 with a text message.
+         * Otherwise sets up streaming callback sending file chunks.
          */
         CXXAPI_INLINE file_response_t(
             const boost::filesystem::path& file_path,
@@ -271,12 +269,9 @@ namespace cxxapi::http {
                 m_callback = [path_copy, file_size](boost::asio::ip::tcp::socket& socket) -> boost::asio::awaitable<void> {
                     std::ifstream file_stream(path_copy.string(), std::ios::binary);
 
-                    if (!file_stream) {
+                    if (!file_stream) 
                         throw base_exception_t("Failed to open file");
-
-                        co_return;
-                    }
-
+                    
                     std::array<char, 8192u> buffer{};
 
                     std::streamsize total_sent{};
@@ -319,7 +314,7 @@ namespace cxxapi::http {
      */
     struct stream_response_t : public response_t {
         /**
-         * @brief Default-construct an empty stream response.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE constexpr stream_response_t() = default;
 
@@ -361,18 +356,17 @@ namespace cxxapi::http {
      */
     struct redirect_response_t : public response_t {
         /**
-         * @brief Default-construct an empty redirect response.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE constexpr redirect_response_t() = default;
 
         /**
          * @brief Construct a redirect response to the given location.
-         *
-         * Enforces a valid 3xx status code, sets Location and text/plain content type.
-         *
          * @param location The URL to redirect to.
          * @param status_code The 3xx redirect status code (default is 302 Found).
          * @param headers Additional headers to include.
+         *
+         * Enforces a valid 3xx status code, sets Location and text/plain content type.
          */
         CXXAPI_INLINE redirect_response_t(
             const std::string_view& location,
@@ -416,12 +410,12 @@ namespace cxxapi::http {
 
     /**
      * @brief A factory wrapper for generating typed responses.
-     *
+     * @tparam _class_t The response class type to instantiate.
+     * 
+     * Must inherit from `response_t` and be either `response_t` or `json_response_t`.
+     * 
      * This template provides a static `make_response` method to construct
      * a response of a specified type (e.g., `json_response_t`).
-     *
-     * @tparam _class_t The response class type to instantiate.
-     * Must inherit from `response_t` and be either `response_t` or `json_response_t`.
      */
     template <typename _class_t = response_t>
     struct response_class_t {
@@ -432,13 +426,12 @@ namespace cxxapi::http {
 
       public:
         /**
-         * @brief Default constructor for the response factory.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE constexpr response_class_t() = default;
 
         /**
          * @brief Construct a response of the specified type.
-         *
          * @tparam _body_t The type of the response body.
          * @param body The content to be sent as the response body.
          * @param status_code HTTP status code (default is 200 OK).

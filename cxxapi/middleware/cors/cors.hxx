@@ -22,7 +22,7 @@ namespace cxxapi::middleware::cors {
      */
     struct cors_options_t {
         /**
-         * @brief Default constructor for cors_options_t.
+         * @brief Default constructor.
          */
         CXXAPI_INLINE cors_options_t()
             : m_allow_all_origins(false),
@@ -60,7 +60,7 @@ namespace cxxapi::middleware::cors {
         int m_max_age{};
 
       public:
-        /** @brief Flag indicating whether all origins are allowed.  Set internally if m_allowed_origins contains "*". */
+        /** @brief Flag indicating whether all origins are allowed. Set internally if m_allowed_origins contains "*". */
         bool m_allow_all_origins{};
 
         /** @brief Flag indicating whether all methods are allowed. Set internally if m_allowed_methods contains "*". */

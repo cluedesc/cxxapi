@@ -6,7 +6,6 @@
 #ifndef CXXAPI_ROUTE_INTERNAL_HXX
 #define CXXAPI_ROUTE_INTERNAL_HXX
 
-// TODO: Rework trie_node_t with radix tree impl.
 namespace cxxapi::route::internal {
     /**
      * @brief Trie node for efficient route path matching.
