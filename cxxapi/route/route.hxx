@@ -20,7 +20,7 @@ namespace cxxapi::route {
          * @param ctx HTTP context containing request data.
          * @return HTTP response to send back.
          */
-        virtual http::response_t handle(http::http_ctx_t ctx) const = 0;
+        [[nodiscard]] virtual http::response_t handle(http::http_ctx_t ctx) const = 0;
 
         /**
          * @brief Handle an HTTP request asynchronously.
@@ -33,7 +33,7 @@ namespace cxxapi::route {
          * @brief Check if this route uses asynchronous handling.
          * @return true if asynchronous, false if synchronous.
          */
-        virtual bool is_async() const = 0;
+        [[nodiscard]] virtual bool is_async() const = 0;
     };
 
     /**
@@ -41,7 +41,7 @@ namespace cxxapi::route {
      * @tparam _fn_t Type of the handler function.
      */
     template <typename _fn_t>
-    struct fn_route_t : public route_t {
+    struct fn_route_t final : public route_t {
         CXXAPI_INLINE constexpr fn_route_t() = default;
 
         /**
@@ -51,7 +51,8 @@ namespace cxxapi::route {
          * @param fn Handler function to invoke.
          */
         CXXAPI_INLINE fn_route_t(const http::e_method& method, const http::path_t& path, _fn_t&& fn)
-            : m_method(method), m_path(path), m_fn(std::move(fn)) {}
+            : m_fn(std::move(fn)), m_path(path), m_method(method) {
+        }
 
       public:
         CXXAPI_INLINE fn_route_t(const fn_route_t&) = delete;
@@ -69,7 +70,7 @@ namespace cxxapi::route {
          * @return HTTP response to send back.
          * @throws base_exception_t if called on async handler.
          */
-        CXXAPI_INLINE http::response_t handle(http::http_ctx_t ctx) const override {
+        [[nodiscard]] CXXAPI_INLINE http::response_t handle(http::http_ctx_t ctx) const override {
             if constexpr (internal::sync_handler_c<_fn_t>)
                 return m_fn(std::move(ctx));
 
@@ -92,7 +93,7 @@ namespace cxxapi::route {
          * @brief Check if this route uses async handling.
          * @return true if async handler, false if sync handler.
          */
-        CXXAPI_INLINE bool is_async() const override { return internal::async_handler_c<_fn_t>; }
+        [[nodiscard]] CXXAPI_INLINE bool is_async() const override { return internal::async_handler_c<_fn_t>; }
 
       private:
         /** @brief Handler function for this route. */

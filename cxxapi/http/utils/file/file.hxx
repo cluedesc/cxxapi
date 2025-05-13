@@ -63,7 +63,7 @@ namespace cxxapi::http {
          * @brief Move constructor.
          * @param other File to move from.
          */
-        CXXAPI_INLINE file_t(file_t&& other)
+        CXXAPI_INLINE file_t(file_t&& other) noexcept
             : m_name(std::move(other.m_name)),
               m_content_type(std::move(other.m_content_type)),
               m_data(std::move(other.m_data)),
@@ -78,7 +78,7 @@ namespace cxxapi::http {
          * @param other File to move from.
          * @return Reference to this file.
          */
-        CXXAPI_INLINE file_t& operator=(file_t&& other) {
+        CXXAPI_INLINE file_t& operator=(file_t&& other) noexcept {
             if (this != &other) {
                 if (!m_in_memory && !m_temp_path.empty()) {
                     boost::system::error_code error_code{};
@@ -106,7 +106,7 @@ namespace cxxapi::http {
          * @brief Get the size of the file in bytes.
          * @return File size in bytes.
          */
-        CXXAPI_INLINE std::size_t size() const {
+        [[nodiscard]] CXXAPI_INLINE std::size_t size() const {
             if (m_in_memory)
                 return m_data.size();
 
@@ -126,36 +126,36 @@ namespace cxxapi::http {
          * @brief Get the file name (read-only).
          * @return Reference to the file name string.
          */
-        CXXAPI_INLINE const auto& name() const { return m_name; }
+        [[nodiscard]] CXXAPI_INLINE const auto& name() const { return m_name; }
 
         /**
          * @brief Get the MIME type of the file (read-only).
          * @return Reference to the content type string.
          */
-        CXXAPI_INLINE const auto& content_type() const { return m_content_type; }
+        [[nodiscard]] CXXAPI_INLINE const auto& content_type() const { return m_content_type; }
 
         /**
          * @brief Get the file data (for in-memory files) (read-only).
          * @return Reference to the data vector.
          */
-        CXXAPI_INLINE const auto& data() const { return m_data; }
+        [[nodiscard]] CXXAPI_INLINE const auto& data() const { return m_data; }
 
         /**
          * @brief Get the path to the temporary file (if not in memory) (read-only).
          * @return Reference to the temporary file path.
          */
-        CXXAPI_INLINE const auto& temp_path() const { return m_temp_path; }
+        [[nodiscard]] CXXAPI_INLINE const auto& temp_path() const { return m_temp_path; }
 
         /**
          * @brief Check if the file is stored in memory (read-only).
          * @return True if in memory, false if backed by a temp file.
          */
-        CXXAPI_INLINE const auto& in_memory() const { return m_in_memory; }
+        [[nodiscard]] CXXAPI_INLINE const auto& in_memory() const { return m_in_memory; }
 
       private:
         /** @brief File name. */
         std::string m_name{};
-        
+
         /** @brief MIME type of the file. */
         std::string m_content_type{};
 

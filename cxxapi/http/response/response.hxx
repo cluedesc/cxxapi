@@ -36,19 +36,17 @@ namespace cxxapi::http {
          * @param status_code The HTTP status code to send (default is 200 OK).
          * @param headers Additional headers to include.
          */
-        CXXAPI_INLINE response_t(std::string&& body, e_status&& status_code = e_status::ok, headers_t&& headers = {}) {
+        CXXAPI_INLINE explicit response_t(std::string&& body, e_status&& status_code = e_status::ok, headers_t&& headers = {}) {
             m_body = std::move(body);
 
             {
-                if (!headers.empty()) {
-                    for (auto& header : headers)
-                        m_headers[std::move(header.first)] = std::move(header.second);
-                }
+                for (auto& [key, value] : headers)
+                    m_headers[key] = std::move(value);
 
                 m_headers.emplace("Content-Type", "text/plain");
             }
 
-            m_status = std::move(status_code);
+            m_status = status_code;
         }
 
       public:
@@ -64,7 +62,7 @@ namespace cxxapi::http {
 
             if (cookie.m_name.rfind("__Host-", 0) == 0) {
                 if (!cookie.m_secure
-                    || cookie.m_domain != ""
+                    || !cookie.m_domain.empty()
                     || cookie.m_path != "/") {
                     throw std::invalid_argument("__Host- cookies require Secure, no Domain, Path=/");
                 }
@@ -180,19 +178,17 @@ namespace cxxapi::http {
          * @param status_code The HTTP status code (default is 200 OK).
          * @param headers Additional headers to include.
          */
-        CXXAPI_INLINE json_response_t(const json_t::json_obj_t& body, e_status&& status_code = e_status::ok, headers_t&& headers = {}) {
+        CXXAPI_INLINE explicit json_response_t(const json_t::json_obj_t& body, e_status&& status_code = e_status::ok, headers_t&& headers = {}) {
             m_body = body.empty() ? "" : json_t::serialize(body);
 
             {
-                if (!headers.empty()) {
-                    for (auto& header : headers)
-                        m_headers[std::move(header.first)] = std::move(header.second);
-                }
+                for (auto& [key, value] : headers)
+                    m_headers[key] = std::move(value);
 
                 m_headers.emplace("Content-Type", "application/json");
             }
 
-            m_status = std::move(status_code);
+            m_status = status_code;
         }
     };
 
@@ -217,7 +213,7 @@ namespace cxxapi::http {
          * If the file is missing or not regular, returns 404 or 400 with a text message.
          * Otherwise sets up streaming callback sending file chunks.
          */
-        CXXAPI_INLINE file_response_t(
+        CXXAPI_INLINE explicit file_response_t(
             const boost::filesystem::path& file_path,
 
             e_status&& status_code = e_status::ok,
@@ -245,10 +241,8 @@ namespace cxxapi::http {
             try {
                 auto file_size = boost::filesystem::file_size(file_path);
 
-                if (!headers.empty()) {
-                    for (auto& header : headers)
-                        m_headers[std::move(header.first)] = std::move(header.second);
-                }
+                for (auto& [key, value] : headers)
+                    m_headers[key] = std::move(value);
 
                 const auto content_type = mime_types_t::get(file_path);
 
@@ -262,9 +256,9 @@ namespace cxxapi::http {
                     m_headers.emplace("ETag", std::move(etag_value));
                 }
 
-                m_status = std::move(status_code);
+                m_status = status_code;
 
-                auto path_copy = file_path;
+                const auto& path_copy = file_path;
 
                 m_callback = [path_copy, file_size](boost::asio::ip::tcp::socket& socket) -> boost::asio::awaitable<void> {
                     std::ifstream file_stream(path_copy.string(), std::ios::binary);
@@ -325,7 +319,7 @@ namespace cxxapi::http {
          * @param status_code The HTTP status code (default is 200 OK).
          * @param headers Additional headers to include.
          */
-        CXXAPI_INLINE stream_response_t(
+        CXXAPI_INLINE explicit stream_response_t(
             callback_t&& callback,
 
             std::string&& content_type = "application/octet-stream",
@@ -335,17 +329,15 @@ namespace cxxapi::http {
         ) {
             m_callback = std::move(callback);
 
-            if (!headers.empty()) {
-                for (auto& header : headers)
-                    m_headers[std::move(header.first)] = std::move(header.second);
-            }
+            for (auto& [key, value] : headers)
+                m_headers[key] = std::move(value);
 
             m_stream = true;
 
             m_headers.emplace("Cache-Control", "no-cache");
             m_headers.emplace("Content-Type", std::move(content_type));
 
-            m_status = std::move(status_code);
+            m_status = status_code;
         }
     };
 
@@ -368,7 +360,7 @@ namespace cxxapi::http {
          *
          * Enforces a valid 3xx status code, sets Location and text/plain content type.
          */
-        CXXAPI_INLINE redirect_response_t(
+        CXXAPI_INLINE explicit redirect_response_t(
             const std::string_view& location,
 
             e_status&& status_code = e_status::found,
@@ -384,12 +376,10 @@ namespace cxxapi::http {
                 && status_code != e_status::permanent_redirect)
                 status_code = e_status::found;
 
-            m_status = std::move(status_code);
+            m_status = status_code;
 
-            if (!headers.empty()) {
-                for (auto& header : headers)
-                    m_headers[std::move(header.first)] = std::move(header.second);
-            }
+            for (auto& [key, value] : headers)
+                m_headers[key] = std::move(value);
 
             m_headers.emplace("Location", std::string(location));
             m_headers.emplace("Content-Type", "text/plain");

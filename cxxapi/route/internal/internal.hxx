@@ -45,7 +45,7 @@ namespace cxxapi::route::internal {
          * @param path Path to normalize.
          * @return Normalized path string.
          */
-        CXXAPI_INLINE constexpr http::path_t normalize_path(const http::path_t& path) const {
+        CXXAPI_INLINE constexpr static http::path_t normalize_path(const http::path_t& path) {
             if (path.empty())
                 return "/";
 
@@ -57,7 +57,7 @@ namespace cxxapi::route::internal {
          * @param segment Path segment to check.
          * @return true if dynamic segment, false otherwise.
          */
-        CXXAPI_INLINE constexpr bool is_dynamic_segment(const std::string_view& segment) const {
+        CXXAPI_INLINE constexpr static bool is_dynamic_segment(const std::string_view& segment) {
             return segment.size() >= 2u && segment.front() == '{' && segment.back() == '}';
         }
 
@@ -66,7 +66,7 @@ namespace cxxapi::route::internal {
          * @param segment Path segment to check.
          * @return true if broken segment, false otherwise.
          */
-        CXXAPI_INLINE constexpr bool is_broken_segment(const std::string_view& segment) const {
+        CXXAPI_INLINE constexpr static bool is_broken_segment(const std::string_view& segment) {
             return (segment.front() == '{' && segment.back() != '}') || (segment.front() != '{' && segment.back() == '}');
         }
 
@@ -75,7 +75,7 @@ namespace cxxapi::route::internal {
          * @param segment Path segment to process.
          * @return Extracted parameter name.
          */
-        CXXAPI_INLINE constexpr std::string extract_param_name(const std::string_view& segment) const {
+        CXXAPI_INLINE constexpr static std::string extract_param_name(const std::string_view& segment) {
             return segment.size() > 2u ? std::string{segment.substr(1u, segment.size() - 2u)} : "";
         }
 
@@ -84,7 +84,7 @@ namespace cxxapi::route::internal {
          * @param path The path to split.
          * @return Vector of path segments.
          */
-        std::vector<http::path_t> split_path(const http::path_t& path) const;
+        [[nodiscard]] std::vector<http::path_t> split_path(const http::path_t& path) const;
 
       private:
         /** @brief Map of HTTP methods to their handlers. */

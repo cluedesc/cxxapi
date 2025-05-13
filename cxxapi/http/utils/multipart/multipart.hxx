@@ -22,15 +22,15 @@ namespace cxxapi::http {
          * @return A map of file names to uploaded file data.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<files_t> parse_async(
-            boost::asio::any_io_executor& executor,
+            const boost::asio::any_io_executor& executor,
 
-            std::string_view body,
-            std::string_view boundary,
+            const std::string_view body,
+            const std::string_view boundary,
 
-            std::size_t chunk_size_disk = 65536u,
+            const std::size_t chunk_size_disk = 65536u,
 
-            std::size_t max_size_file_in_memory = 1048576u,
-            std::size_t max_size_files_in_memory = 10485760u
+            const std::size_t max_size_file_in_memory = 1048576u,
+            const std::size_t max_size_files_in_memory = 10485760u
         ) {
             files_t ret{};
 
@@ -152,17 +152,17 @@ namespace cxxapi::http {
          * @param max_size_files_in_memory The maximum size of files in memory.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<files_t> parse_from_file_async(
-            boost::asio::any_io_executor& executor,
+            const boost::asio::any_io_executor& executor,
 
             const boost::filesystem::path& path,
 
-            std::string_view boundary,
+            const std::string_view boundary,
 
-            std::size_t chunk_size = 16384u,
-            std::size_t chunk_size_disk = 65536u,
+            const std::size_t chunk_size = 16384u,
+            const std::size_t chunk_size_disk = 65536u,
 
-            std::size_t max_size_file_in_memory = 1048576u,
-            std::size_t max_size_files_in_memory = 10485760u
+            const std::size_t max_size_file_in_memory = 1048576u,
+            const std::size_t max_size_files_in_memory = 10485760u
         ) {
             files_t ret{};
 
@@ -178,7 +178,7 @@ namespace cxxapi::http {
             if (boundary.empty())
                 throw exceptions::processing_exception_t("Empty boundary is not allowed");
 
-            if (!boundary.empty() 
+            if (!boundary.empty()
                 && std::isspace(boundary.back()))
                 throw exceptions::processing_exception_t("Boundary can't end with whitespace");
 
@@ -188,37 +188,37 @@ namespace cxxapi::http {
             std::string full_boundary = "\r\n" + dash_boundary;
             std::string full_boundary_end = "\r\n" + dash_boundary_end;
 
-            std::string first_boundary = dash_boundary;
-
             std::vector<char> buffer(chunk_size_disk);
 
             try {
                 std::string accumulated_data;
 
-                auto boundary_found = false;
-
                 std::string line;
 
                 std::vector<char> line_buffer;
 
-                do {
-                    line = co_await async_read_line(file, line_buffer);
+                {
+                    auto boundary_found = false;
 
-                    std::string normalized_line = line;
+                    do {
+                        line = co_await async_read_line(file, line_buffer, chunk_size);
 
-                    if (!normalized_line.empty()
-                        && normalized_line.back() == '\n')
-                        normalized_line.pop_back();
+                        std::string normalized_line = line;
 
-                    if (!normalized_line.empty()
-                        && normalized_line.back() == '\r')
-                        normalized_line.pop_back();
+                        if (!normalized_line.empty()
+                            && normalized_line.back() == '\n')
+                            normalized_line.pop_back();
 
-                    boundary_found = (normalized_line == dash_boundary);
-                } while (!line.empty() && !boundary_found);
+                        if (!normalized_line.empty()
+                            && normalized_line.back() == '\r')
+                            normalized_line.pop_back();
 
-                if (!boundary_found)
-                    throw exceptions::processing_exception_t("Invalid format, initial boundary not found");
+                        boundary_found = (normalized_line == dash_boundary);
+                    } while (!line.empty() && !boundary_found);
+
+                    if (!boundary_found)
+                        throw exceptions::processing_exception_t("Invalid format, initial boundary not found");
+                }
 
                 while (true) {
                     std::string headers_blob;
@@ -226,7 +226,7 @@ namespace cxxapi::http {
                     auto headers_end_found = false;
 
                     while (!headers_end_found) {
-                        line = co_await async_read_line(file, line_buffer);
+                        line = co_await async_read_line(file, line_buffer, chunk_size);
 
                         std::string normalized_line = line;
                         if (!normalized_line.empty()
@@ -306,7 +306,7 @@ namespace cxxapi::http {
                         search_buffer.insert(search_buffer.end(), buffer.begin(), buffer.begin() + bytes_read);
 
                         auto find_boundary = [&](const std::string& boundary_str) -> size_t {
-                            auto it = std::search(
+                            const auto& it = std::search(
                                 search_buffer.begin(), search_buffer.end(),
 
                                 boundary_str.begin(), boundary_str.end()
@@ -404,7 +404,7 @@ namespace cxxapi::http {
 
                             auto write_size = search_buffer.size() - keep_size;
 
-                            if (in_memory 
+                            if (in_memory
                                 && part_bytes + write_size > max_size_file_in_memory) {
                                 tmp_path = boost::filesystem::temp_directory_path()
                                          / boost::filesystem::unique_path("cxxapi_tmp-%%%%-%%%%");
@@ -483,9 +483,9 @@ namespace cxxapi::http {
                     if (in_memory) {
                         ret.emplace(name, file_t{std::move(name), std::move(content_type), std::move(data)});
                     }
-                    else 
+                    else
                         ret.emplace(name, file_t{std::move(filename), std::move(content_type), std::move(tmp_path)});
-                    
+
                     if (is_final_boundary)
                         break;
                 }
@@ -512,10 +512,11 @@ namespace cxxapi::http {
          * @tparam _type_t The type of the stream.
          * @param stream The stream to read from.
          * @param buffer The buffer to read into.
+         * @param chunk_size The chunk size to read.
          * @return The line read.
          */
         template <typename _type_t>
-        CXXAPI_NOINLINE static boost::asio::awaitable<std::string> async_read_line(_type_t& stream, std::vector<char>& buffer) {
+        CXXAPI_NOINLINE static boost::asio::awaitable<std::string> async_read_line(_type_t& stream, std::vector<char>& buffer, const std::size_t chunk_size) {
             std::string line{};
 
             char c{};
@@ -524,11 +525,9 @@ namespace cxxapi::http {
 
             buffer.clear();
 
-            const size_t max_line_length = 8192u;
-
             size_t bytes_read_total{};
 
-            while (bytes_read_total < max_line_length) {
+            while (bytes_read_total < chunk_size) {
                 auto bytes_read = co_await stream.async_read_some(
                     boost::asio::buffer(&c, 1u),
 
@@ -578,9 +577,9 @@ namespace cxxapi::http {
          * @param ctype The content type of the part.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<void> parse_part_headers(
-            boost::asio::any_io_executor& executor,
+            const boost::asio::any_io_executor& executor,
 
-            std::string_view headers_blob,
+            const std::string_view headers_blob,
 
             std::string& name,
             std::string& filename,
@@ -617,6 +616,7 @@ namespace cxxapi::http {
          */
         CXXAPI_INLINE static std::vector<std::string_view> _split(
             const std::string_view& str,
+            
             const std::string_view& delimiter
         ) {
             std::vector<std::string_view> ret{};

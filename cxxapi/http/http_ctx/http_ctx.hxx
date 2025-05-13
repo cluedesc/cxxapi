@@ -213,7 +213,7 @@ namespace cxxapi::http {
          * @param content_type Content-Type header value.
          * @return Extracted boundary string.
          */
-        CXXAPI_INLINE std::string _extract_boundary(const std::string_view& content_type) {
+        CXXAPI_INLINE static std::string _extract_boundary(const std::string_view& content_type) {
             std::string ct{content_type};
 
             std::vector<std::string> parts{};

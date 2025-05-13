@@ -90,7 +90,7 @@ namespace shared {
         /**
          * @brief Access the read-only configuration.
          */
-        CXXAPI_INLINE const auto& cfg() const { return m_cfg; }
+        [[nodiscard]] CXXAPI_INLINE const auto& cfg() const { return m_cfg; }
 
         /**
          * @brief Access the initialization flag mutable.
@@ -100,7 +100,7 @@ namespace shared {
         /**
          * @brief Access the initialization flag read-only.
          */
-        CXXAPI_INLINE const auto& inited() const { return m_inited; }
+        [[nodiscard]] CXXAPI_INLINE const auto& inited() const { return m_inited; }
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
         /**
@@ -982,17 +982,17 @@ namespace shared {
             /**
              * @brief Access the connection configuration read-only.
              */
-            CXXAPI_INLINE const auto& cfg() const { return m_cfg; }
+            [[nodiscard]] CXXAPI_INLINE const auto& cfg() const { return m_cfg; }
 
             /**
              * @brief Access the underlying Boost.Redis connection mutable.
              */
-            CXXAPI_INLINE auto& connection() { return m_connection; }
+            [[nodiscard]] CXXAPI_INLINE auto& connection() { return m_connection; }
 
             /**
              * @brief Access the underlying Boost.Redis connection read-only.
              */
-            CXXAPI_INLINE const auto& connection() const { return m_connection; }
+            [[nodiscard]] CXXAPI_INLINE const auto& connection() const { return m_connection; }
 
             /**
              * @brief Access the connection status mutable.
@@ -1002,7 +1002,7 @@ namespace shared {
             /**
              * @brief Access the connection status read-only.
              */
-            CXXAPI_INLINE const auto& status() const { return m_status; }
+            [[nodiscard]] CXXAPI_INLINE const auto& status() const { return m_status; }
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
             /**
@@ -1013,7 +1013,7 @@ namespace shared {
             /**
              * @brief Access the read-only logger for this connection.
              */
-            CXXAPI_INLINE const auto& logger() const { return m_logger; }
+            [[nodiscard]] CXXAPI_INLINE const auto& logger() const { return m_logger; }
 #endif
 
           private:
@@ -1465,14 +1465,14 @@ namespace shared {
             /**
              * @brief Access the pool configuration read-only.
              */
-            CXXAPI_INLINE const auto& cfg() const { return m_cfg; }
+            [[nodiscard]] CXXAPI_INLINE const auto& cfg() const { return m_cfg; }
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
             /** @brief Access the mutable logger for the pool. */
             CXXAPI_INLINE auto& logger() { return m_logger; }
 
             /** @brief Access the read-only logger for the pool. */
-            CXXAPI_INLINE const auto& logger() const { return m_logger; }
+            [[nodiscard]] CXXAPI_INLINE const auto& logger() const { return m_logger; }
 #endif // CXXAPI_USE_LOGGING_IMPL
 
           private:

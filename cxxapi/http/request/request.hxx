@@ -35,7 +35,7 @@ namespace cxxapi::http {
          * 
          * Checks the "Connection" header; if absent, defaults to true (keep-alive).
          */
-        CXXAPI_INLINE bool keep_alive() const {
+        [[nodiscard]] CXXAPI_INLINE bool keep_alive() const {
             const auto it = m_headers.find("connection");
 
             if (it == m_headers.end())
@@ -51,7 +51,7 @@ namespace cxxapi::http {
          *
          * Parses the Cookie header into name=value pairs separated by ';' and trims whitespace.
          */
-        CXXAPI_INLINE std::optional<std::string_view> cookie(const std::string_view& name) const {
+        [[nodiscard]] CXXAPI_INLINE std::optional<std::string_view> cookie(const std::string_view& name) const {
             const auto it = m_headers.find("cookie");
 
             if (it == m_headers.end())
@@ -135,7 +135,7 @@ namespace cxxapi::http {
              * @brief Get the remote address (read-only).
              * @return Const reference to the string.
              */
-            CXXAPI_INLINE const auto& remote_addr() const { return m_remote_addr; }
+            [[nodiscard]] CXXAPI_INLINE const auto& remote_addr() const { return m_remote_addr; }
 
             /**
              * @brief Get the remote port (mutable).
@@ -147,7 +147,7 @@ namespace cxxapi::http {
              * @brief Get the remote port for reading (read-only).
              * @return Const reference to the uint16.
              */
-            CXXAPI_INLINE const auto& remote_port() const { return m_remote_port; }
+            [[nodiscard]] CXXAPI_INLINE const auto& remote_port() const { return m_remote_port; }
 
           private:
             /** @brief The client's remote address. */
@@ -168,7 +168,7 @@ namespace cxxapi::http {
          * @brief Get the HTTP method (read-only).
          * @return Const reference to the method enum.
          */
-        CXXAPI_INLINE const auto& method() const { return m_method; }
+        [[nodiscard]] CXXAPI_INLINE const auto& method() const { return m_method; }
 
         /**
          * @brief Get the request URI (mutable).
@@ -180,7 +180,7 @@ namespace cxxapi::http {
          * @brief Access the request URI (read-only).
          * @return Const reference to the uri object.
          */
-        CXXAPI_INLINE const auto& uri() const { return m_uri; }
+        [[nodiscard]] CXXAPI_INLINE const auto& uri() const { return m_uri; }
 
         /**
          * @brief Get the message body (mutable).
@@ -192,7 +192,7 @@ namespace cxxapi::http {
          * @brief Get the message body (read-only).
          * @return Const reference to the body object.
          */
-        CXXAPI_INLINE const auto& body() const { return m_body; }
+        [[nodiscard]] CXXAPI_INLINE const auto& body() const { return m_body; }
 
         /**
          * @brief Get the header map (mutable).
@@ -204,7 +204,7 @@ namespace cxxapi::http {
          * @brief Get the header map (read-only).
          * @return Const reference to the headers container.
          */
-        CXXAPI_INLINE const auto& headers() const { return m_headers; }
+        [[nodiscard]] CXXAPI_INLINE const auto& headers() const { return m_headers; }
 
         /**
          * @brief Access the parse path (mutable).
@@ -216,7 +216,7 @@ namespace cxxapi::http {
          * @brief Access the parse path (read_only).
          * @return Const reference to the string.
          */
-        CXXAPI_INLINE const auto& parse_path() const { return m_parse_path; }
+        [[nodiscard]] CXXAPI_INLINE const auto& parse_path() const { return m_parse_path; }
 
         /**
          * @brief Access the client info (mutable).
@@ -228,7 +228,7 @@ namespace cxxapi::http {
          * @brief Access the clientinfo (read-only).
          * @return Const reference to the client info struct.
          */
-        CXXAPI_INLINE const auto& client() const { return m_client_info; }
+        [[nodiscard]] CXXAPI_INLINE const auto& client() const { return m_client_info; }
 
       private:
         /** @brief HTTP method. */

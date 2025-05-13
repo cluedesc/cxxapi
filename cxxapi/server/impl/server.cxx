@@ -9,7 +9,7 @@ namespace cxxapi::server {
         boost::system::error_code error_code{};
 
         {
-            boost::asio::ip::tcp::acceptor::reuse_address option(true);
+            const boost::asio::ip::tcp::acceptor::reuse_address option(true);
 
             m_acceptor.set_option(option, error_code);
 
@@ -26,7 +26,7 @@ namespace cxxapi::server {
 
         {
 #if defined(SO_REUSEPORT)
-            boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port(true);
+            const boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port(true);
 
             m_acceptor.set_option(reuse_port, error_code);
 
@@ -275,7 +275,7 @@ namespace cxxapi::server {
                         co_await client_t(std::move(sock), self->m_cxxapi, *self).start();
                     },
 
-                    [](std::exception_ptr eptr) {
+                    [](const std::exception_ptr& eptr) {
                         try {
                             if (eptr)
                                 std::rethrow_exception(eptr);

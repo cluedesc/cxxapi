@@ -319,7 +319,7 @@ namespace cxxapi::server {
         try {
             auto keep_alive = req.keep_alive();
 
-            const auto response_data = co_await m_cxxapi._handle_request(std::move(req));
+            auto response_data = co_await m_cxxapi._handle_request(std::move(req));
 
             if (response_data.m_stream) {
                 boost::beast::http::response<boost::beast::http::empty_body> response;
@@ -328,10 +328,10 @@ namespace cxxapi::server {
                     response.version(m_parsed_request.version());
 
                     {
-                        for (auto& header : response_data.m_headers)
-                            response.insert(std::move(header.first), std::move(header.second));
+                        for (auto&& [key, value] : response_data.m_headers)
+                            response.insert(key, std::move(value));
 
-                        for (auto& cookie : response_data.m_cookies)
+                        for (auto&& cookie : response_data.m_cookies)
                             response.insert("Set-Cookie", std::move(cookie));
                     }
 
@@ -383,10 +383,10 @@ namespace cxxapi::server {
             response.version(m_parsed_request.version());
 
             {
-                for (auto& header : response_data.m_headers)
-                    response.insert(std::move(header.first), std::move(header.second));
+                for (auto&& [key, value] : response_data.m_headers)
+                    response.insert(key, std::move(value));
 
-                for (auto& cookie : response_data.m_cookies)
+                for (auto&& cookie : response_data.m_cookies)
                     response.insert("Set-Cookie", std::move(cookie));
             }
 

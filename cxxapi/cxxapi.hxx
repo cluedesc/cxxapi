@@ -224,9 +224,14 @@ namespace cxxapi {
          * @brief Get the running state of the API.
          * @return Const reference to the running state flag.
          */
-        CXXAPI_INLINE const auto& running() const { return m_running; }
+        [[nodiscard]] CXXAPI_INLINE const auto& running() const { return m_running; }
 
       private:
+        /**
+         * @brief Initializes the middleware chain.
+         *
+         * @note This function is called automatically when the API is started.
+         */
         void init_middlewares_chain();
 
       private:

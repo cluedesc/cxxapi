@@ -23,7 +23,7 @@ namespace cxxapi {
          * @brief Construct a base exception with a plain message.
          * @param str Error message.
          */
-        CXXAPI_INLINE base_exception_t(const std::string& str)
+        CXXAPI_INLINE explicit base_exception_t(const std::string& str)
             : std::runtime_error(str), m_message(str), m_what(str) {
         }
 
@@ -53,7 +53,7 @@ namespace cxxapi {
          * @brief Obtaining the status of the code associated with an exception (read-only).
          * @return Const reference to the status code.
          */
-        CXXAPI_INLINE const auto& status() const { return m_status; }
+        [[nodiscard]] CXXAPI_INLINE const auto& status() const { return m_status; }
 
         /**
          * @brief Get the prefix of the message used in the exception (mutable).
@@ -65,7 +65,7 @@ namespace cxxapi {
          * @brief Get the prefix of the message used in the exception (read-only).
          * @return Const Reference to the message prefix.
          */
-        CXXAPI_INLINE const auto& prefix() const { return m_prefix; }
+        [[nodiscard]] CXXAPI_INLINE const auto& prefix() const { return m_prefix; }
 
         /**
          * @brief Get the message used in the exception (mutable).
@@ -77,13 +77,13 @@ namespace cxxapi {
          * @brief Get the message used in the exception (read-only).
          * @return Const reference to the message.
          */
-        CXXAPI_INLINE const auto& message() const { return m_message; }
+        [[nodiscard]] CXXAPI_INLINE const auto& message() const { return m_message; }
 
         /**
          * @brief Get the full formatted error message.
          * @return Pointer to a null-terminated C-string with the exception message.
          */
-        CXXAPI_INLINE const char* what() const noexcept override { return m_what.c_str(); }
+        [[nodiscard]] CXXAPI_INLINE const char* what() const noexcept override { return m_what.c_str(); }
 
       private:
         /** @brief Status code associated with the exception. */
@@ -112,7 +112,7 @@ namespace cxxapi {
              * @param status Status code associated with the exception.
              * @param prefix Prefix to prepend to the error message.
              */
-            CXXAPI_INLINE client_exception_t(
+            CXXAPI_INLINE explicit client_exception_t(
                 const std::string& str,
 
                 const std::size_t& status = 0u,
@@ -134,7 +134,7 @@ namespace cxxapi {
              * @param status Associated status code.
              * @param prefix Optional prefix to include in the formatted message.
              */
-            CXXAPI_INLINE server_exception_t(
+            CXXAPI_INLINE explicit server_exception_t(
                 const std::string& str,
 
                 const std::size_t& status = 0u,
@@ -156,7 +156,7 @@ namespace cxxapi {
              * @param status Associated status code.
              * @param prefix Optional prefix to include in the formatted message.
              */
-            CXXAPI_INLINE processing_exception_t(
+            CXXAPI_INLINE explicit processing_exception_t(
                 const std::string& str,
 
                 const std::size_t& status = 0u,

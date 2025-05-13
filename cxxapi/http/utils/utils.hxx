@@ -28,18 +28,18 @@ namespace cxxapi::http::utils {
         boost::asio::ip::tcp::socket& socket,
         boost::beast::flat_buffer& buffer,
 
-        std::size_t length,
-        std::size_t chunk_size,
+        const std::size_t length,
+        const std::size_t chunk_size,
 
         const boost::filesystem::path& path
     ) {
-        auto executor = socket.get_executor();
+        const auto executor = socket.get_executor();
 
         boost::asio::stream_file file(executor);
 
         boost::system::error_code error_code{};
 
-        file.open(path.string(), boost::asio::stream_file::write_only | boost::asio::stream_file::create);
+        file.open(path.string(), boost::asio::stream_file::write_only | boost::asio::stream_file::create, error_code);
 
         if (error_code)
             throw boost::system::system_error(error_code, "Can't open temp file");

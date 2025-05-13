@@ -54,8 +54,8 @@ namespace cxxapi {
             m_signals.emplace(m_server->io_ctx(), SIGINT, SIGTERM, SIGQUIT);
 
             if (m_signals.has_value()) {
-                m_signals->async_wait([&](const boost::system::error_code& ec, int signo) {
-                    if (!ec)
+                m_signals->async_wait([&](const boost::system::error_code& err_code, int signo) {
+                    if (!err_code)
                         this->stop();
                 });
             }
@@ -73,7 +73,13 @@ namespace cxxapi {
         if (m_signals.has_value()) {
             boost::system::error_code error_code{};
 
-            m_signals->cancel(error_code);
+            [[maybe_unused]] auto _ = m_signals->cancel(error_code);
+
+            if (error_code) {
+#ifdef CXXAPI_USE_LOGGING_IMPL
+                g_logging->log(e_log_level::error, "[{}:{}] Failed to cancel signals: {}", m_cfg.m_host, m_cfg.m_port, error_code.message());
+#endif // CXXAPI_USE_LOGGING_IMPL
+            }
         }
 
         if (m_server) {
@@ -113,7 +119,7 @@ namespace cxxapi {
 
     boost::asio::awaitable<http::response_t> c_cxxapi::_handle_request(http::request_t&& request) {
         try {
-            co_return co_await m_middlewares_chain(std::move(request));
+            co_return co_await m_middlewares_chain(request);
         }
 #ifdef CXXAPI_USE_LOGGING_IMPL
         catch (const boost::system::system_error& e) {
@@ -229,9 +235,7 @@ namespace cxxapi {
 
         auto chain = core;
 
-        for (auto it = m_middlewares.rbegin(); it != m_middlewares.rend(); ++it) {
-            auto middleware = *it;
-            
+        for (auto& middleware : std::ranges::reverse_view(m_middlewares)) {
             auto next_chain = std::move(chain);
 
             chain = [middleware, next_chain](const http::request_t& req)
