@@ -8,21 +8,35 @@ namespace cxxapi::server {
           m_acceptor(m_io_ctx, boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(host), port)) {
         boost::system::error_code error_code{};
 
-        {
-            const boost::asio::ip::tcp::acceptor::reuse_address option(true);
+        const auto& cfg = m_cxxapi.cfg();
 
-            m_acceptor.set_option(option, error_code);
+        {
+            m_acceptor.non_blocking(cfg.m_server.m_acceptor_nonblocking, error_code);
 
             if (error_code) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
-                g_logging->log(e_log_level::warning, "[Server] Failed to set REUSE_ADDRESS option: {}", error_code.message());
+                g_logging->log(e_log_level::warning, "[Server] Failed to set acceptor nonblocking option: {}", error_code.message());
 #endif // CXXAPI_USE_LOGGING_IMPL
 
                 error_code = {};
             }
         }
 
-        const auto& cfg = m_cxxapi.cfg();
+        {
+#if defined(SO_REUSEADDR)
+            const boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEADDR> reuse_addr(true);
+
+            m_acceptor.set_option(reuse_addr, error_code);
+
+            if (error_code) {
+#ifdef CXXAPI_USE_LOGGING_IMPL
+                g_logging->log(e_log_level::warning, "[Server] Failed to set REUSEADDR option: {}", error_code.message());
+#endif // CXXAPI_USE_LOGGING_IMPL
+
+                error_code = {};
+            }
+#endif
+        }
 
         {
 #if defined(SO_REUSEPORT)
@@ -32,11 +46,19 @@ namespace cxxapi::server {
 
             if (error_code) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
-                g_logging->log(e_log_level::warning, "[Server] Failed to set SO_REUSEPORT option: {}", error_code.message());
+                g_logging->log(e_log_level::warning, "[Server] Failed to set REUSEPORT option: {}", error_code.message());
 #endif // CXXAPI_USE_LOGGING_IMPL
 
                 error_code = {};
             }
+#endif
+        }
+
+        {
+#if defined(TCP_FASTOPEN)
+            constexpr auto qlen = 5;
+
+            setsockopt(m_acceptor.native_handle(), IPPROTO_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen));
 #endif
         }
 
@@ -210,6 +232,8 @@ namespace cxxapi::server {
         if (!m_running.load(std::memory_order_acquire))
             co_return;
 
+        auto executor = co_await boost::asio::this_coro::executor;
+
         while (true) {
             if (!m_running.load(std::memory_order_relaxed))
                 break;
@@ -223,7 +247,7 @@ namespace cxxapi::server {
 
                 if (error_code) {
                     if (error_code == boost::asio::error::operation_aborted)
-                        break;
+                        co_return;
 
                     continue;
                 }
@@ -269,49 +293,13 @@ namespace cxxapi::server {
                 }
 
                 boost::asio::co_spawn(
-                    m_io_ctx,
+                    executor,
 
                     [self = shared_from_this(), sock = std::move(socket)]() mutable -> boost::asio::awaitable<void> {
                         co_await client_t(std::move(sock), self->m_cxxapi, *self).start();
                     },
 
-                    [](const std::exception_ptr& eptr) {
-                        try {
-                            if (eptr)
-                                std::rethrow_exception(eptr);
-                        }
-#ifdef CXXAPI_USE_LOGGING_IMPL
-                        catch (const boost::system::system_error& e) {
-                            g_logging->log(
-                                e_log_level::error,
-
-                                "[Server] Boost system error in accepting client: code={}, category={}, message={}",
-
-                                e.code().value(), e.code().category().name(), e.what()
-                            );
-                        }
-                        catch (const std::exception& e) {
-                            g_logging->log(e_log_level::error, "[Server] Exception in accepting client: {}", e.what());
-                        }
-                        catch (...) {
-                            g_logging->log(e_log_level::error, "[Server] Unknown exception in accepting client");
-                        }
-#else
-                        catch (const boost::system::system_error& e) {
-                            std::cerr << fmt::format(
-                                "[Server] Boost system error in accepting client: code={}, category={}, message={}",
-
-                                e.code().value(), e.code().category().name(), e.what()
-                            ) << "\n";
-                        }
-                        catch (const std::exception& e) {
-                            std::cerr << fmt::format("[Server] Exception while accepting client: {}", e.what()) << "\n";
-                        }
-                        catch (...) {
-                            std::cerr << "[Server] Unknown exception in session";
-                        }
-#endif // CXXAPI_USE_LOGGING_IMPL
-                    }
+                    boost::asio::detached
                 );
             }
 #ifdef CXXAPI_USE_LOGGING_IMPL

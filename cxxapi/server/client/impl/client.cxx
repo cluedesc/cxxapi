@@ -61,9 +61,8 @@ namespace cxxapi::server {
 
                 auto parse = false;
 
-                auto ctype_it = req.headers().find("content-type");
-
-                if (ctype_it != req.headers().end()) {
+                if (auto ctype_it = req.headers().find("content-type");
+                    ctype_it != req.headers().end()) {
                     auto ctype = ctype_it->second;
 
                     if (boost::algorithm::istarts_with(ctype, "multipart/form-data"))
@@ -130,7 +129,7 @@ namespace cxxapi::server {
                 {
                     auto remote_endpoint = m_socket.remote_endpoint();
 
-                    auto client_info = cxxapi::http::request_t::client_info_t(
+                    auto client_info = http::request_t::client_info_t(
                         remote_endpoint.address().to_string(),
 
                         remote_endpoint.port()
@@ -142,12 +141,11 @@ namespace cxxapi::server {
                 if (is_websocket) {
                     break;
                 }
-                else {
-                    co_await handle_request(std::move(req));
 
-                    if (m_close)
-                        break;
-                }
+                co_await handle_request(std::move(req));
+
+                if (m_close)
+                    break;
             }
 #ifdef CXXAPI_USE_LOGGING_IMPL
             catch (const exceptions::client_exception_t& e) {
@@ -267,23 +265,6 @@ namespace cxxapi::server {
                             }
 
                         case 500u:
-                            {
-                                response.result(boost::beast::http::status::internal_server_error);
-
-                                if (m_cxxapi.cfg().m_http.m_response_class == http::e_response_class::plain) {
-                                    response.body() = "Internal server error";
-                                }
-                                else {
-                                    response.body() = http::json_t::serialize(
-                                        http::json_t::json_obj_t{
-                                            {"message", "Internal server error"}
-                                        }
-                                    );
-                                }
-
-                                break;
-                            }
-
                         default:
                             {
                                 response.result(boost::beast::http::status::internal_server_error);
@@ -328,11 +309,11 @@ namespace cxxapi::server {
                     response.version(m_parsed_request.version());
 
                     {
-                        for (auto&& [key, value] : response_data.m_headers)
-                            response.insert(key, std::move(value));
+                        for (const auto& [key, value] : response_data.m_headers)
+                            response.insert(key, value);
 
-                        for (auto&& cookie : response_data.m_cookies)
-                            response.insert("Set-Cookie", std::move(cookie));
+                        for (const auto& cookie : response_data.m_cookies)
+                            response.insert("Set-Cookie", cookie);
                     }
 
                     response.chunked(true);
@@ -383,11 +364,11 @@ namespace cxxapi::server {
             response.version(m_parsed_request.version());
 
             {
-                for (auto&& [key, value] : response_data.m_headers)
-                    response.insert(key, std::move(value));
+                for (const auto& [key, value] : response_data.m_headers)
+                    response.insert(key, value);
 
-                for (auto&& cookie : response_data.m_cookies)
-                    response.insert("Set-Cookie", std::move(cookie));
+                for (const auto& cookie : response_data.m_cookies)
+                    response.insert("Set-Cookie", cookie);
             }
 
             response.body() = std::move(response_data.m_body);
@@ -398,7 +379,6 @@ namespace cxxapi::server {
                 response.keep_alive(true);
 
                 response.set(boost::beast::http::field::connection, "keep-alive");
-
                 response.set(boost::beast::http::field::keep_alive, fmt::format("timeout={}", m_cxxapi.cfg().m_http.m_keep_alive_timeout));
             }
             else {
@@ -447,13 +427,6 @@ namespace cxxapi::server {
 
                 switch (std::get<1u>(catch_tuple)) {
                     case 500u:
-                        {
-                            response.result(boost::beast::http::status::internal_server_error);
-                            response.body() = "Internal server error";
-
-                            break;
-                        }
-
                     default:
                         {
                             response.result(boost::beast::http::status::internal_server_error);

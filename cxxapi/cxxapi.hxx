@@ -84,6 +84,9 @@ namespace cxxapi {
 
             /** @brief Temp directory for temporary files. (default: /tmp/cxxapi_tmp) */
             boost::filesystem::path m_tmp_dir{"/tmp/cxxapi_tmp"};
+
+            /** @brief Setting the acceptor nonblocking option */
+            bool m_acceptor_nonblocking{true};
         } m_server{};
 
         /**
@@ -147,7 +150,7 @@ namespace cxxapi {
         /**
          * @brief Default constructor. Initializes configuration and running state.
          */
-        CXXAPI_INLINE c_cxxapi() : m_cfg(), m_running(false) {}
+        CXXAPI_INLINE c_cxxapi() : m_running(false) {}
 
       public:
         /**
@@ -182,9 +185,8 @@ namespace cxxapi {
             _fn_t&& fn
         ) {
             try {
-                auto new_route = std::make_shared<route::fn_route_t<std::decay_t<_fn_t>>>(method, path, std::forward<_fn_t>(fn));
-
-                if (!m_route_trie.insert(method, path, std::move(new_route)))
+                if (auto new_route = std::make_shared<route::fn_route_t<std::decay_t<_fn_t>>>(method, path, std::forward<_fn_t>(fn));
+                    !m_route_trie.insert(method, path, std::move(new_route)))
                     throw base_exception_t(fmt::format("Failed to insert route: {} {}", http::method_to_str(method), path));
             }
             catch (const base_exception_t& e) {

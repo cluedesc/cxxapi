@@ -56,7 +56,7 @@ namespace cxxapi::server {
          * @param m Memory order for the atomic load
          * @return true if server is running, false otherwise
          */
-        CXXAPI_INLINE const auto running(const std::memory_order& m) const { return m_running.load(m); }
+        CXXAPI_INLINE auto running(const std::memory_order& m) const { return m_running.load(m); }
 
       private:
         /**
