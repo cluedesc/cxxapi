@@ -67,13 +67,13 @@ namespace cxxapi::http {
          * @param max_size_files_in_memory Maximum total size of files in memory.
          */
         CXXAPI_NOINLINE boost::asio::awaitable<void> init_parsing(
-            boost::asio::any_io_executor& executor,
+            const boost::asio::any_io_executor& executor,
 
-            std::size_t chunk_size,
-            std::size_t chunk_size_disk,
+            const std::size_t chunk_size,
+            const std::size_t chunk_size_disk,
 
-            std::size_t max_size_file_in_memory,
-            std::size_t max_size_files_in_memory
+            const std::size_t max_size_file_in_memory,
+            const std::size_t max_size_files_in_memory
         ) {
             const auto content_type_it = m_request.headers().find("content-type");
 
@@ -94,8 +94,7 @@ namespace cxxapi::http {
                             chunk_size,
                             chunk_size_disk,
 
-                            max_size_file_in_memory,
-                            max_size_files_in_memory
+                            max_size_file_in_memory
                         );
 
                         boost::system::error_code error_code{};
@@ -149,16 +148,16 @@ namespace cxxapi::http {
          * @return Awaitable self object.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<http_ctx_t> create(
-            boost::asio::any_io_executor& executor,
+            const boost::asio::any_io_executor& executor,
             
             const request_t& request,
             const params_t& params,
 
-            std::size_t chunk_size = 16384u,
-            std::size_t chunk_size_disk = 65536u,
+            const std::size_t chunk_size = 16384u,
+            const std::size_t chunk_size_disk = 65536u,
 
-            std::size_t max_size_file_in_memory = 1048576u,
-            std::size_t max_size_files_in_memory = 10485760u
+            const std::size_t max_size_file_in_memory = 1048576u,
+            const std::size_t max_size_files_in_memory = 10485760u
         ) {
             http_ctx_t ctx{request, params};
 
@@ -183,9 +182,9 @@ namespace cxxapi::http {
          * @return Pointer to the file object or nullptr if not found.
          */
         CXXAPI_INLINE file_t* file(const std::string& field_name) {
-            auto it = m_files.find(field_name);
+            const auto it = m_files.find(field_name);
 
-            return (it != m_files.end()) ? &it->second : nullptr;
+            return it != m_files.end() ? &it->second : nullptr;
         }
 
       public:

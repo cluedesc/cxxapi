@@ -18,7 +18,7 @@ namespace cxxapi {
      * Inherits from std::runtime_error and provides status code handling,
      * optional message prefixes, and full error formatting.
      */
-    struct base_exception_t : public std::runtime_error {
+    struct base_exception_t : std::runtime_error {
         /**
          * @brief Construct a base exception with a plain message.
          * @param str Error message.
@@ -105,7 +105,7 @@ namespace cxxapi {
          *
          * Automatically sets the prefix to "Server-Client".
          */
-        struct client_exception_t : public base_exception_t {
+        struct client_exception_t final : base_exception_t {
             /**
              * @brief Construct a new client_exception_t with a message and status.
              * @param str Error message to describe the exception.
@@ -127,7 +127,7 @@ namespace cxxapi {
          *
          * Automatically sets the prefix to "Server".
          */
-        struct server_exception_t : public base_exception_t {
+        struct server_exception_t final : base_exception_t {
             /**
              * @brief Construct a new server_exception_t with a message and status.
              * @param str Error message.
@@ -149,7 +149,7 @@ namespace cxxapi {
          *
          * Automatically sets the prefix to "HTTP-Processing".
          */
-        struct processing_exception_t : public base_exception_t {
+        struct processing_exception_t final : base_exception_t {
             /**
              * @brief Construct a new processing_exception_t with a message and status.
              * @param str Error message.

@@ -16,7 +16,7 @@ namespace cxxapi::http {
         using mime_map_t = boost::unordered_map<std::string_view, std::string_view>;
 
         /** @brief MIME map entries. */
-        inline static constexpr std::array<std::pair<std::string_view, std::string_view>, 64u> k_mime_entries{
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 64u> k_mime_entries{
             {{".html", "text/html"},
              {".htm", "text/html"},
              {".css", "text/css"},
@@ -125,7 +125,7 @@ namespace cxxapi::http {
 
             const auto it = mime_map.find(boost::algorithm::to_lower_copy(ext_str));
 
-            return (it != mime_map.end()) ? it->second : k_default_mime_type;
+            return it != mime_map.end() ? it->second : k_default_mime_type;
         }
     };
 }

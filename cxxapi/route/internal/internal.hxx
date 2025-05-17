@@ -49,7 +49,7 @@ namespace cxxapi::route::internal {
             if (path.empty())
                 return "/";
 
-            return (path.size() > 1u && path.back() == '/') ? path.substr(0, path.size() - 1u) : path;
+            return path.size() > 1u && path.back() == '/' ? path.substr(0, path.size() - 1u) : path;
         }
 
         /**
@@ -102,7 +102,6 @@ namespace cxxapi::route::internal {
 
     /**
      * @brief Traits for extracting value type from awaitable.
-     * @tparam _type_t Type to analyze.
      */
     template <typename>
     struct awaitable_traits_t;
@@ -119,9 +118,8 @@ namespace cxxapi::route::internal {
 
     /**
      * @brief Check if a type is an awaitable HTTP response.
-     * @tparam _assigned_t Type to check.
      */
-    template <typename _assigned_t>
+    template <typename>
     struct is_awaitable_response_t {
         static constexpr bool value = false;
     };

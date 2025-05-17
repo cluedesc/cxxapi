@@ -1,9 +1,8 @@
 #include <cxxapi.hxx>
 
 namespace cxxapi::server {
-    c_server::c_server(c_cxxapi& api, const std::string& host, std::int32_t port)
+    c_server::c_server(c_cxxapi& api, const std::string& host, const std::int32_t port)
         : m_cxxapi(api),
-          m_io_ctx(),
           m_port(port),
           m_acceptor(m_io_ctx, boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(host), port)) {
         boost::system::error_code error_code{};
@@ -75,11 +74,13 @@ namespace cxxapi::server {
 #endif // CXXAPI_USE_LOGGING_IMPL
     }
 
-    void c_server::start(std::int32_t workers_count) {
+    void c_server::start(const std::int32_t workers_count) {
         m_running.store(true, std::memory_order_release);
 
         try {
-            const auto workers = (workers_count <= 0u) ? std::thread::hardware_concurrency() : workers_count;
+            const auto workers = workers_count <= 0
+                                   ? static_cast<std::int32_t>(std::thread::hardware_concurrency())
+                                   : workers_count;
 
             if (workers_count <= 0) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
@@ -87,12 +88,26 @@ namespace cxxapi::server {
 #endif // CXXAPI_USE_LOGGING_IMPL
             }
 
-            auto acceptors_count = workers / 4u;
+            auto acceptors_count = 0;
+
+            if (workers <= 4) {
+                acceptors_count = 1;
+            }
+            else if (workers <= 16) {
+                acceptors_count = std::max(2, workers / 6);
+            }
+            else
+                acceptors_count = std::max(3, workers / 8);
+
+            acceptors_count = std::max(1, acceptors_count);
+
             auto regular_workers = workers - acceptors_count;
 
-            if (acceptors_count <= 0u && workers > 1u) {
-                acceptors_count = 1u;
-                regular_workers = workers - 1u;
+            if (regular_workers < 1) {
+                regular_workers = 1;
+
+                if (workers == 1)
+                    acceptors_count = 1;
             }
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
@@ -105,9 +120,8 @@ namespace cxxapi::server {
             );
 #endif // CXXAPI_USE_LOGGING_IMPL
 
-            for (std::int32_t i{}; i < acceptors_count; ++i) {
+            for (std::int32_t i{}; i < acceptors_count; ++i)
                 boost::asio::co_spawn(m_io_ctx, do_accept(), boost::asio::detached);
-            }
 
             {
                 m_thread_pool = std::make_unique<boost::asio::thread_pool>(workers);
@@ -232,12 +246,9 @@ namespace cxxapi::server {
         if (!m_running.load(std::memory_order_acquire))
             co_return;
 
-        auto executor = co_await boost::asio::this_coro::executor;
+        const auto executor = co_await boost::asio::this_coro::executor;
 
-        while (true) {
-            if (!m_running.load(std::memory_order_relaxed))
-                break;
-
+        while (m_running.load(std::memory_order_relaxed)) {
             try {
                 boost::system::error_code error_code{};
 
@@ -259,6 +270,12 @@ namespace cxxapi::server {
                         boost::asio::ip::tcp::no_delay no_delay_option(true);
 
                         socket.set_option(no_delay_option, error_code);
+
+#if defined(TCP_QUICKACK) && defined(__linux__)
+                        int quickack = 1;
+
+                        setsockopt(socket.native_handle(), IPPROTO_TCP, TCP_QUICKACK, &quickack, sizeof(quickack));
+#endif
                     }
 
                     if (cfg.m_socket.m_rcv_buf_size) {

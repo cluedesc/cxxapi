@@ -213,7 +213,7 @@ namespace cxxapi {
          * @param request HTTP request to handle
          * @return Awaitable that resolves to an HTTP response
          */
-        boost::asio::awaitable<http::response_t> _handle_request(http::request_t&& request);
+        boost::asio::awaitable<http::response_t> _handle_request(http::request_t&& request) const;
 
       public:
         /**

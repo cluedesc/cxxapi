@@ -159,26 +159,37 @@ namespace cxxapi::http {
      * @return Corresponding HTTP method enum value.
      */
     CXXAPI_INLINE constexpr e_method str_to_method(const std::string_view& method_str) {
-        if (method_str == "GET")
-            return e_method::get;
-        if (method_str == "HEAD")
-            return e_method::head;
-        else if (method_str == "POST")
-            return e_method::post;
-        else if (method_str == "PUT")
-            return e_method::put;
-        else if (method_str == "DELETE")
-            return e_method::delete_;
-        else if (method_str == "CONNECT")
-            return e_method::connect;
-        else if (method_str == "OPTIONS")
-            return e_method::options;
-        else if (method_str == "TRACE")
-            return e_method::trace;
-        else if (method_str == "PATCH")
-            return e_method::patch;
-        else
-            return e_method::unknown;
+        switch (utils::fnv1a_hash(method_str)) {
+            case utils::fnv1a_hash("GET"):
+                return e_method::get;
+
+            case utils::fnv1a_hash("HEAD"):
+                return e_method::head;
+
+            case utils::fnv1a_hash("POST"):
+                return e_method::post;
+
+            case utils::fnv1a_hash("PUT"):
+                return e_method::put;
+
+            case utils::fnv1a_hash("DELETE"):
+                return e_method::delete_;
+
+            case utils::fnv1a_hash("CONNECT"):
+                return e_method::connect;
+
+            case utils::fnv1a_hash("OPTIONS"):
+                return e_method::options;
+
+            case utils::fnv1a_hash("TRACE"):
+                return e_method::trace;
+
+            case utils::fnv1a_hash("PATCH"):
+                return e_method::patch;
+
+            default:
+                return e_method::unknown;
+        }
     }
 
     /**

@@ -23,6 +23,7 @@ namespace cxxapi::http::utils {
      * @param buffer Buffer to read into.
      * @param length Length of the request.
      * @param chunk_size Chunk size to read in.
+     * @param path Stream file path.
      */
     CXXAPI_NOINLINE static boost::asio::awaitable<void> stream_request(
         boost::asio::ip::tcp::socket& socket,
@@ -115,6 +116,25 @@ namespace cxxapi::http::utils {
         }
 
         return {};
+    }
+
+    /**
+     * @brief Computes the 32-bit FNV-1a hash for the given string.
+     * @param str Input string to hash.
+     * @return 32-bit FNV-1a hash value.
+     *
+     * Implements the Fowler–Noll–Vo hash function variant 1a.
+     * Designed for fast, non-cryptographic hashing.
+     */
+    CXXAPI_INLINE constexpr std::uint32_t fnv1a_hash(const std::string_view str) {
+        std::uint32_t hash = 2166136261u;
+
+        for (const auto c : str) {
+            hash ^= static_cast<std::uint8_t>(c);
+            hash *= 16777619u;
+        }
+
+        return hash;
     }
 }
 

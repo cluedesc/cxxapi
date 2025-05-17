@@ -33,7 +33,7 @@ namespace cxxapi::http {
          * @param temp_path Path to the temporary file.
          */
         CXXAPI_INLINE file_t(std::string name, std::string content_type, boost::filesystem::path temp_path)
-            : m_name(std::move(name)), m_content_type(std::move(content_type)), m_temp_path(std::move(temp_path)), m_in_memory(false) {
+            : m_name(std::move(name)), m_content_type(std::move(content_type)), m_temp_path(std::move(temp_path)) {
         }
 
         /**

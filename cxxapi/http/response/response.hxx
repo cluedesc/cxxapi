@@ -81,13 +81,14 @@ namespace cxxapi::http {
             if (cookie.m_max_age.count() > 0) {
                 fmt::format_to(std::back_inserter(buf), "; Max-Age={}", cookie.m_max_age.count());
 
-                auto now = boost::posix_time::second_clock::universal_time();
+                const auto now = boost::posix_time::second_clock::universal_time();
+                const auto exp = now + boost::posix_time::seconds{cookie.m_max_age.count()};
 
-                auto exp = now + boost::posix_time::seconds{cookie.m_max_age.count()};
+                const auto exp_t = to_time_t(exp);
 
-                auto expires = fmt::format("{} {}", boost::posix_time::to_iso_extended_string(exp), "GMT");
+                auto tm = fmt::gmtime(exp_t);
 
-                expires = boost::posix_time::to_simple_string(exp);
+                auto expires = fmt::format("{:%a, %d %b %Y %H:%M:%S} GMT", tm);
 
                 fmt::format_to(std::back_inserter(buf), "; Expires={}", expires);
             }
@@ -166,7 +167,7 @@ namespace cxxapi::http {
      *
      * Sets "Content-Type: application/json".
      */
-    struct json_response_t : public response_t {
+    struct json_response_t final : response_t {
         /**
          * @brief Default constructor.
          */
@@ -198,7 +199,7 @@ namespace cxxapi::http {
      * Sets appropriate Content-Type, Content-Length, and ETag headers.
      * On errors, returns an error status and plain-text message.
      */
-    struct file_response_t : public response_t {
+    struct file_response_t final : response_t {
         /**
          * @brief Default constructor.
          */
@@ -273,7 +274,7 @@ namespace cxxapi::http {
                     while (total_sent < file_size && file_stream && socket.is_open()) {
                         file_stream.read(buffer.data(), buffer.size());
 
-                        auto bytes_read = file_stream.gcount();
+                        const auto bytes_read = file_stream.gcount();
 
                         if (bytes_read <= 0)
                             break;
@@ -306,7 +307,7 @@ namespace cxxapi::http {
      *
      * Sets "Cache-Control: no-cache" and a default or specified Content-Type.
      */
-    struct stream_response_t : public response_t {
+    struct stream_response_t final : response_t {
         /**
          * @brief Default constructor.
          */
@@ -346,7 +347,7 @@ namespace cxxapi::http {
      *
      * Validates that status_code is a redirect code (3xx), defaults to 302 Found.
      */
-    struct redirect_response_t : public response_t {
+    struct redirect_response_t final : response_t {
         /**
          * @brief Default constructor.
          */

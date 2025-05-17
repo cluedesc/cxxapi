@@ -114,7 +114,7 @@ namespace cxxapi::http {
                             for (std::size_t w{}; w < content_len; w += chunk_size_disk) {
                                 const auto chunk = std::min(chunk_size_disk, content_len - w);
 
-                                ofs.write(body.data() + pos + w, chunk);
+                                ofs.write(body.data() + pos + w, static_cast<std::streamsize>(chunk));
 
                                 co_await boost::asio::post(executor, boost::asio::use_awaitable);
                             }
@@ -149,7 +149,6 @@ namespace cxxapi::http {
          * @param chunk_size The chunk size.
          * @param chunk_size_disk The chunk size for disk.
          * @param max_size_file_in_memory The maximum size of file in memory.
-         * @param max_size_files_in_memory The maximum size of files in memory.
          */
         CXXAPI_NOINLINE static boost::asio::awaitable<files_t> parse_from_file_async(
             const boost::asio::any_io_executor& executor,
@@ -161,8 +160,7 @@ namespace cxxapi::http {
             const std::size_t chunk_size = 16384u,
             const std::size_t chunk_size_disk = 65536u,
 
-            const std::size_t max_size_file_in_memory = 1048576u,
-            const std::size_t max_size_files_in_memory = 10485760u
+            const std::size_t max_size_file_in_memory = 1048576u
         ) {
             files_t ret{};
 
@@ -213,12 +211,14 @@ namespace cxxapi::http {
                             && normalized_line.back() == '\r')
                             normalized_line.pop_back();
 
-                        boundary_found = (normalized_line == dash_boundary);
+                        boundary_found = normalized_line == dash_boundary;
                     } while (!line.empty() && !boundary_found);
 
                     if (!boundary_found)
                         throw exceptions::processing_exception_t("Invalid format, initial boundary not found");
                 }
+
+                using diff_t = std::vector<char>::difference_type;
 
                 while (true) {
                     std::string headers_blob;
@@ -303,33 +303,31 @@ namespace cxxapi::http {
                         if (bytes_read == 0u)
                             break;
 
-                        search_buffer.insert(search_buffer.end(), buffer.begin(), buffer.begin() + bytes_read);
+                        search_buffer.insert(
+                            search_buffer.end(), buffer.begin(),
+
+                            buffer.begin() + static_cast<diff_t>(bytes_read)
+                        );
 
                         auto find_boundary = [&](const std::string& boundary_str) -> size_t {
-                            const auto& it = std::search(
-                                search_buffer.begin(), search_buffer.end(),
-
-                                boundary_str.begin(), boundary_str.end()
-                            );
-
-                            if (it != search_buffer.end())
-                                return std::distance(search_buffer.begin(), it);
+                            if (auto result = std::ranges::search(search_buffer, boundary_str); result.begin() != search_buffer.end()) {
+                                return static_cast<std::size_t>(
+                                    std::ranges::distance(search_buffer.begin(), result.begin())
+                                );
+                            }
 
                             return std::string::npos;
                         };
 
-                        auto normal_pos = find_boundary(full_boundary);
-                        auto end_pos = find_boundary(full_boundary_end);
-
-                        if (normal_pos != std::string::npos
-                            || end_pos != std::string::npos) {
+                        if (auto normal_pos = find_boundary(full_boundary), end_pos = find_boundary(full_boundary_end);
+                            normal_pos != std::string::npos || end_pos != std::string::npos) {
                             std::size_t boundary_pos{};
 
                             if (normal_pos != std::string::npos
                                 && end_pos != std::string::npos) {
                                 boundary_pos = std::min(normal_pos, end_pos);
 
-                                is_final_boundary = (boundary_pos == end_pos);
+                                is_final_boundary = boundary_pos == end_pos;
                             }
                             else if (normal_pos != std::string::npos) {
                                 boundary_pos = normal_pos;
@@ -371,7 +369,11 @@ namespace cxxapi::http {
                                 }
 
                                 if (in_memory) {
-                                    data.insert(data.end(), search_buffer.begin(), search_buffer.begin() + content_bytes);
+                                    data.insert(
+                                        data.end(), search_buffer.begin(),
+
+                                        search_buffer.begin() + static_cast<diff_t>(content_bytes)
+                                    );
                                 }
                                 else {
                                     co_await boost::asio::async_write(
@@ -388,9 +390,7 @@ namespace cxxapi::http {
 
                             auto boundary_length = is_final_boundary ? full_boundary_end.size() : full_boundary.size();
 
-                            auto rewind_amount = search_buffer.size() - (boundary_pos + boundary_length);
-
-                            if (rewind_amount > 0) {
+                            if (auto rewind_amount = search_buffer.size() - (boundary_pos + boundary_length); rewind_amount > 0) {
                                 file.seek(-static_cast<int64_t>(rewind_amount), boost::asio::file_base::seek_cur, ec);
 
                                 if (ec)
@@ -430,7 +430,11 @@ namespace cxxapi::http {
                             }
 
                             if (in_memory) {
-                                data.insert(data.end(), search_buffer.begin(), search_buffer.begin() + write_size);
+                                data.insert(
+                                    data.end(), search_buffer.begin(),
+
+                                    search_buffer.begin() + static_cast<diff_t>(write_size)
+                                );
                             }
                             else {
                                 co_await boost::asio::async_write(
@@ -444,7 +448,7 @@ namespace cxxapi::http {
 
                             part_bytes += write_size;
 
-                            std::vector<char> temp(search_buffer.end() - keep_size, search_buffer.end());
+                            std::vector temp(search_buffer.end() - static_cast<diff_t>(keep_size), search_buffer.end());
 
                             search_buffer = std::move(temp);
                         }
@@ -594,9 +598,7 @@ namespace cxxapi::http {
                     filename = std::string(_extract_between(line, "filename=\"", "\""));
                 }
                 else if (boost::ifind_first(line, "content-type")) {
-                    auto pos = line.find(':');
-
-                    if (pos != std::string::npos) {
+                    if (const auto pos = line.find(':'); pos != std::string::npos) {
                         ctype = line.substr(pos + 1);
 
                         boost::algorithm::trim(ctype);
@@ -616,7 +618,7 @@ namespace cxxapi::http {
          */
         CXXAPI_INLINE static std::vector<std::string_view> _split(
             const std::string_view& str,
-            
+
             const std::string_view& delimiter
         ) {
             std::vector<std::string_view> ret{};

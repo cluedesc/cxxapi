@@ -19,9 +19,7 @@ namespace cxxapi {
 
         auto port = 8080u;
 
-        auto [ptr, ec] = std::from_chars(m_cfg.m_port.c_str(), m_cfg.m_port.c_str() + m_cfg.m_port.size(), port);
-
-        if (ec != std::errc())
+        if (auto [ptr, ec] = std::from_chars(m_cfg.m_port.c_str(), m_cfg.m_port.c_str() + m_cfg.m_port.size(), port); ec != std::errc())
             port = 0;
 
         if (port <= 0) {
@@ -38,7 +36,7 @@ namespace cxxapi {
             boost::filesystem::create_directory(m_cfg.m_server.m_tmp_dir);
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
-            cxxapi::g_logging->log(cxxapi::e_log_level::debug, "[Core] Created tmp directory: {}", m_cfg.m_server.m_tmp_dir.string());
+            g_logging->log(e_log_level::debug, "[Core] Created tmp directory: {}", m_cfg.m_server.m_tmp_dir.string());
 #endif // CXXAPI_USE_LOGGING_IMPL
         }
 
@@ -54,7 +52,7 @@ namespace cxxapi {
             m_signals.emplace(m_server->io_ctx(), SIGINT, SIGTERM, SIGQUIT);
 
             if (m_signals.has_value()) {
-                m_signals->async_wait([&](const boost::system::error_code& err_code, int signo) {
+                m_signals->async_wait([&](const boost::system::error_code& err_code, [[maybe_unused]] std::int32_t signo) {
                     if (!err_code)
                         this->stop();
                 });
@@ -71,7 +69,7 @@ namespace cxxapi {
         m_running.store(false, std::memory_order_release);
 
         {
-            std::lock_guard<std::mutex> lock(m_wait_mutex);
+            std::lock_guard lock(m_wait_mutex);
         }
 
         m_wait_cv.notify_all();
@@ -79,7 +77,7 @@ namespace cxxapi {
         if (m_signals.has_value()) {
             boost::system::error_code error_code{};
 
-            [[maybe_unused]] auto _ = m_signals->cancel(error_code);
+            m_signals->cancel(error_code);
 
             if (error_code) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
@@ -110,8 +108,8 @@ namespace cxxapi {
 #endif // CXXAPI_USE_LOGGING_IMPL
 
         {
-            std::unique_lock<std::mutex> lock(m_wait_mutex);
-            
+            std::unique_lock lock(m_wait_mutex);
+
             m_wait_cv.wait(lock, [this] {
                 return !m_running.load(std::memory_order_acquire);
             });
@@ -128,7 +126,7 @@ namespace cxxapi {
 #endif // CXXAPI_USE_LOGGING_IMPL
     }
 
-    boost::asio::awaitable<http::response_t> c_cxxapi::_handle_request(http::request_t&& request) {
+    boost::asio::awaitable<http::response_t> c_cxxapi::_handle_request(http::request_t&& request) const {
         try {
             co_return co_await m_middlewares_chain(request);
         }
@@ -182,7 +180,7 @@ namespace cxxapi {
     }
 
     void c_cxxapi::init_middlewares_chain() {
-        std::function<boost::asio::awaitable<http::response_t>(const http::request_t&)> core = [this](const http::request_t& req)
+        const std::function<boost::asio::awaitable<http::response_t>(const http::request_t&)> core = [this](const http::request_t& req)
             -> boost::asio::awaitable<http::response_t> {
             auto opt_pair = m_route_trie.find(req.method(), req.uri());
 
@@ -240,8 +238,8 @@ namespace cxxapi {
 
             if (route->is_async())
                 co_return co_await route->handle_async(std::move(ctx));
-            else
-                co_return route->handle(std::move(ctx));
+
+            co_return route->handle(std::move(ctx));
         };
 
         auto chain = core;
