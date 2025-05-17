@@ -5,17 +5,17 @@ namespace cxxapi::server {
         if (!m_server.running(std::memory_order_acquire))
             co_return;
 
-        while (true) {
+        constexpr std::size_t k_default_buf_capacity = 64u * 1024u;
+
+        {
+            m_buffer.clear();
+            m_buffer.reserve(k_default_buf_capacity);
+        }
+
+        while (m_server.running(std::memory_order_relaxed)) {
             std::tuple<bool, std::size_t> catch_tuple{};
 
             try {
-                if (!m_server.running(std::memory_order_relaxed))
-                    break;
-
-                m_parsed_request = {};
-
-                m_buffer.consume(m_buffer.size());
-
                 boost::system::error_code error_code{};
 
                 boost::beast::http::request_parser<boost::beast::http::empty_body> hdr_parser{};
@@ -104,6 +104,8 @@ namespace cxxapi::server {
                 if (!parse) {
                     boost::beast::http::request_parser<boost::beast::http::string_body> parser{std::move(hdr_parser)};
 
+                    parser.body_limit(m_cxxapi.cfg().m_server.m_max_request_size);
+
                     co_await boost::beast::http::async_read(
                         m_socket,
                         m_buffer,
@@ -143,6 +145,20 @@ namespace cxxapi::server {
                 }
 
                 co_await handle_request(std::move(req));
+
+                {
+                    m_buffer.consume(m_buffer.size());
+
+                    if (m_buffer.capacity() > k_default_buf_capacity) {
+                        boost::beast::flat_buffer tmp;
+
+                        tmp.reserve(k_default_buf_capacity);
+
+                        std::swap(m_buffer, tmp);
+                    }
+
+                    m_parsed_request = {};
+                }
 
                 if (m_close)
                     break;

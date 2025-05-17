@@ -70,6 +70,12 @@ namespace cxxapi {
 
         m_running.store(false, std::memory_order_release);
 
+        {
+            std::lock_guard<std::mutex> lock(m_wait_mutex);
+        }
+
+        m_wait_cv.notify_all();
+
         if (m_signals.has_value()) {
             boost::system::error_code error_code{};
 
@@ -103,8 +109,13 @@ namespace cxxapi {
         );
 #endif // CXXAPI_USE_LOGGING_IMPL
 
-        while (m_running.load(std::memory_order_acquire))
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        {
+            std::unique_lock<std::mutex> lock(m_wait_mutex);
+            
+            m_wait_cv.wait(lock, [this] {
+                return !m_running.load(std::memory_order_acquire);
+            });
+        }
 
 #ifdef CXXAPI_USE_LOGGING_IMPL
         g_logging->log(

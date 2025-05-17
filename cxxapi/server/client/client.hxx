@@ -28,9 +28,7 @@ namespace cxxapi {
                 : m_cxxapi(api),
                   m_server(server),
                   m_socket(std::move(socket)),
-                  m_web_socket(m_socket),
-                  m_close(false) {
-                m_buffer.prepare(8192u);
+                  m_web_socket(m_socket) {
             }
 
           public:
@@ -70,7 +68,7 @@ namespace cxxapi {
             boost::beast::websocket::stream<boost::asio::ip::tcp::socket&> m_web_socket;
 
             /** @brief Parsed HTTP request. */
-            boost::beast::http::message<true, boost::beast::http::string_body, boost::beast::http::fields> m_parsed_request;
+            boost::beast::http::message<true, boost::beast::http::string_body> m_parsed_request;
         };
     }
 }

@@ -243,6 +243,12 @@ namespace cxxapi {
         /** @brief Atomic flag indicating whether the API is running. */
         std::atomic_bool m_running{};
 
+        /** @brief Mutex for wait state. */
+        std::mutex m_wait_mutex;
+
+        /** @brief Condition variable for wait state. */
+        std::condition_variable m_wait_cv;
+
         /** @brief Server instance. */
         std::shared_ptr<server::c_server> m_server;
 
