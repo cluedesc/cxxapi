@@ -10,55 +10,59 @@ namespace cxxapi::server {
         const auto& cfg = m_cxxapi.cfg();
 
         {
-            m_acceptor.non_blocking(cfg.m_server.m_acceptor_nonblocking, error_code);
+            const auto& acceptor_cfg = cfg.m_server.m_acceptor;
 
-            if (error_code) {
+            {
+                m_acceptor.non_blocking(acceptor_cfg.m_nonblocking, error_code);
+
+                if (error_code) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
-                g_logging->log(e_log_level::warning, "[Server] Failed to set acceptor nonblocking option: {}", error_code.message());
+                    g_logging->log(e_log_level::warning, "[Server] Failed to set acceptor nonblocking option: {}", error_code.message());
 #endif // CXXAPI_USE_LOGGING_IMPL
 
-                error_code = {};
+                    error_code = {};
+                }
             }
-        }
 
-        {
+            if (acceptor_cfg.m_reuse_address) {
 #if defined(SO_REUSEADDR)
-            const boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEADDR> reuse_addr(true);
+                const boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEADDR> reuse_addr(true);
 
-            m_acceptor.set_option(reuse_addr, error_code);
+                m_acceptor.set_option(reuse_addr, error_code);
 
-            if (error_code) {
+                if (error_code) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
-                g_logging->log(e_log_level::warning, "[Server] Failed to set REUSEADDR option: {}", error_code.message());
+                    g_logging->log(e_log_level::warning, "[Server] Failed to set REUSEADDR option: {}", error_code.message());
 #endif // CXXAPI_USE_LOGGING_IMPL
 
-                error_code = {};
-            }
+                    error_code = {};
+                }
 #endif
-        }
+            }
 
-        {
+            if (acceptor_cfg.m_reuse_port) {
 #if defined(SO_REUSEPORT)
-            const boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port(true);
+                const boost::asio::detail::socket_option::boolean<SOL_SOCKET, SO_REUSEPORT> reuse_port(true);
 
-            m_acceptor.set_option(reuse_port, error_code);
+                m_acceptor.set_option(reuse_port, error_code);
 
-            if (error_code) {
+                if (error_code) {
 #ifdef CXXAPI_USE_LOGGING_IMPL
-                g_logging->log(e_log_level::warning, "[Server] Failed to set REUSEPORT option: {}", error_code.message());
+                    g_logging->log(e_log_level::warning, "[Server] Failed to set REUSEPORT option: {}", error_code.message());
 #endif // CXXAPI_USE_LOGGING_IMPL
 
-                error_code = {};
+                    error_code = {};
+                }
+#endif
             }
-#endif
-        }
 
-        {
+            if (acceptor_cfg.m_tcp_fast_open) {
 #if defined(TCP_FASTOPEN)
-            constexpr auto qlen = 5;
+                constexpr auto qlen = 5;
 
-            setsockopt(m_acceptor.native_handle(), IPPROTO_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen));
+                setsockopt(m_acceptor.native_handle(), IPPROTO_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen));
 #endif
+            }
         }
 
         {

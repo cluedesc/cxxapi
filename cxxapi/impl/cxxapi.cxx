@@ -180,7 +180,7 @@ namespace cxxapi {
     }
 
     void c_cxxapi::init_middlewares_chain() {
-        const std::function<boost::asio::awaitable<http::response_t>(const http::request_t&)> core = [this](const http::request_t& req)
+        std::function<boost::asio::awaitable<http::response_t>(const http::request_t&)> core = [this](const http::request_t& req)
             -> boost::asio::awaitable<http::response_t> {
             auto opt_pair = m_route_trie.find(req.method(), req.uri());
 
@@ -242,14 +242,14 @@ namespace cxxapi {
             co_return route->handle(std::move(ctx));
         };
 
-        auto chain = core;
+        auto chain = std::move(core);
 
         for (auto& middleware : std::ranges::reverse_view(m_middlewares)) {
             auto next_chain = std::move(chain);
 
-            chain = [middleware, next_chain](const http::request_t& req)
+            chain = [middleware, next_chain = std::move(next_chain)](const http::request_t& req) mutable
                 -> boost::asio::awaitable<http::response_t> {
-                co_return co_await middleware->handle(req, next_chain);
+                co_return co_await middleware->handle(req, std::move(next_chain));
             };
         }
 

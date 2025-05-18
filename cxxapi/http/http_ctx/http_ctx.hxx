@@ -75,9 +75,7 @@ namespace cxxapi::http {
             const std::size_t max_size_file_in_memory,
             const std::size_t max_size_files_in_memory
         ) {
-            const auto content_type_it = m_request.headers().find("content-type");
-
-            if (content_type_it != m_request.headers().end()) {
+            if (const auto content_type_it = m_request.headers().find("content-type"); content_type_it != m_request.headers().end()) {
                 const auto content_type = content_type_it->second;
 
                 const auto boundary = _extract_boundary(content_type);

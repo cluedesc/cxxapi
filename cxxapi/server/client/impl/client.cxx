@@ -140,9 +140,8 @@ namespace cxxapi::server {
                     req.client() = std::move(client_info);
                 }
 
-                if (is_websocket) {
+                if (is_websocket)
                     break;
-                }
 
                 co_await handle_request(std::move(req));
 
@@ -358,11 +357,9 @@ namespace cxxapi::server {
                     co_await boost::beast::http::async_write_header(m_socket, sr, boost::asio::use_awaitable);
                 }
 
-                {
-                    {
-                        co_await response_data.m_callback(m_socket);
-                    }
+                co_await response_data.m_callback(m_socket);
 
+                {
                     co_await boost::asio::async_write(m_socket, boost::asio::buffer("0\r\n\r\n"), boost::asio::use_awaitable);
                 }
 
@@ -388,7 +385,6 @@ namespace cxxapi::server {
             }
 
             response.body() = std::move(response_data.m_body);
-
             response.result(static_cast<std::int32_t>(response_data.m_status));
 
             if (keep_alive) {

@@ -85,8 +85,22 @@ namespace cxxapi {
             /** @brief Temp directory for temporary files. (default: /tmp/cxxapi_tmp) */
             boost::filesystem::path m_tmp_dir{"/tmp/cxxapi_tmp"};
 
-            /** @brief Setting the acceptor nonblocking option */
-            bool m_acceptor_nonblocking{true};
+            /**
+             * @brief TCP acceptor settings for low-level socket behavior.
+             */
+            struct acceptor_t {
+                /** @brief Whether to set the socket to non-blocking mode. (default: true) */
+                bool m_nonblocking{true};
+
+                /** @brief Whether to allow the socket to reuse the address. (default: true) */
+                bool m_reuse_address{true};
+
+                /** @brief Whether to allow the socket to reuse the port. (default: true) */
+                bool m_reuse_port{true};
+
+                /** @brief Whether to enable TCP Fast Open for incoming connections. (default: true) */
+                bool m_tcp_fast_open{true};
+            } m_acceptor{};
         } m_server{};
 
         /**
